@@ -42,6 +42,8 @@ services:
     ports:
       - '3000:3000'
     environment:
+      # Pin the port: the shared .env sets PORT=3001 for the api, which next dev would pick up
+      PORT: 3000
       NEXT_PUBLIC_API_URL: http://localhost:3001/api
     env_file:
       - path: .env
