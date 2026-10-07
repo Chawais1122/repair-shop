@@ -11,10 +11,7 @@
     "sourceMap": true,
     "outDir": "./dist",
     "baseUrl": "./",
-    "incremental": true,
-    "paths": {
-      "@repair-shop/shared": ["../../packages/shared/src"]
-    }
+    "incremental": true
   },
   "include": ["src/**/*", "test/**/*"],
   "exclude": ["node_modules", "dist"]
