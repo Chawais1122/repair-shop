@@ -1,7 +1,9 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { getTicket, getTechnicians } from '@/lib/api/tickets';
+import { getPaymentSummary } from '@/lib/api/payments';
 import { TicketStatusBadge } from '@/components/shared/ticket-status-badge';
+import { PaymentSection } from '@/components/shared/payment-section';
 import { StatusTimeline } from './status-timeline';
 import { UpdateStatusForm } from './update-status-form';
 import { AssignTechnicianForm } from './assign-technician-form';
@@ -22,7 +24,10 @@ export default async function TicketDetailPage({ params }: PageProps) {
     throw err;
   }
 
-  const technicians = await getTechnicians();
+  const [technicians, paymentSummary] = await Promise.all([
+    getTechnicians(),
+    getPaymentSummary(id),
+  ]);
 
   const priorityColors: Record<string, string> = {
     LOW: 'text-gray-500',
@@ -137,6 +142,8 @@ export default async function TicketDetailPage({ params }: PageProps) {
           <section className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm">
             <UpdateStatusForm ticketId={ticket.id} currentStatus={ticket.status} />
           </section>
+
+          <PaymentSection ticketId={ticket.id} initialSummary={paymentSummary} />
         </div>
       </div>
     </div>
