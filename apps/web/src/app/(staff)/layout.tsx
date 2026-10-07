@@ -22,6 +22,12 @@ export default async function StaffLayout({ children }: { children: React.ReactN
           >
             Customers
           </Link>
+          <Link
+            href="/tickets"
+            className="flex items-center rounded-md px-3 py-2 text-sm font-medium text-gray-300 hover:bg-gray-700 hover:text-white"
+          >
+            Tickets
+          </Link>
         </nav>
         <div className="absolute bottom-0 w-56 border-t border-gray-700 px-4 py-3 text-xs text-gray-400">
           {user.email}

@@ -8,6 +8,7 @@ import { HealthModule } from './health/health.module';
 import { AuthModule } from './auth/auth.module';
 import { CustomersModule } from './customers/customers.module';
 import { DevicesModule } from './devices/devices.module';
+import { TicketsModule } from './tickets/tickets.module';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import { TransformInterceptor } from './common/interceptors/transform.interceptor';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
@@ -22,6 +23,7 @@ import { RolesGuard } from './auth/guards/roles.guard';
     AuthModule,
     CustomersModule,
     DevicesModule,
+    TicketsModule,
   ],
   providers: [
     {
