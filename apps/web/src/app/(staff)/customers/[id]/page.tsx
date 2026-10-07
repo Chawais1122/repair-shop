@@ -28,20 +28,20 @@ export default async function CustomerDetailPage({ params }: Props) {
 
   return (
     <div className="mx-auto max-w-2xl">
-      <div className="mb-6 flex items-center gap-2 text-sm text-gray-500">
+      <nav className="mb-6 flex items-center gap-1.5 text-sm text-gray-500" aria-label="Breadcrumb">
         <Link href="/customers" className="hover:text-indigo-600">
           Customers
         </Link>
-        <span>/</span>
+        <span aria-hidden="true">/</span>
         <span className="text-gray-900">{customer.name}</span>
-      </div>
+      </nav>
 
-      <div className="mb-4 flex items-start justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">{customer.name}</h1>
-        <div className="flex gap-2">
+      <div className="mb-5 flex items-start justify-between gap-4">
+        <h1 className="text-2xl font-semibold text-gray-900">{customer.name}</h1>
+        <div className="flex shrink-0 gap-2">
           <Link
             href={`/customers/${id}/edit`}
-            className="rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm font-semibold text-gray-700 hover:bg-gray-50"
+            className="inline-flex items-center rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-300"
           >
             Edit
           </Link>
@@ -60,49 +60,69 @@ export default async function CustomerDetailPage({ params }: Props) {
       </div>
 
       <div className="mt-8">
-        <div className="mb-3 flex items-center justify-between">
+        <div className="mb-4 flex items-center justify-between">
           <h2 className="text-lg font-semibold text-gray-900">Devices</h2>
           <Link
             href={`/customers/${id}/devices/new`}
-            className="rounded-md bg-indigo-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-indigo-500"
+            className="inline-flex items-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
           >
             Add device
           </Link>
         </div>
 
         {devices.length === 0 ? (
-          <p className="text-sm text-gray-500">No devices on record.</p>
+          <div className="rounded-lg border-2 border-dashed border-gray-200 p-8 text-center">
+            <p className="text-sm text-gray-500">No devices on record.</p>
+            <Link
+              href={`/customers/${id}/devices/new`}
+              className="mt-2 inline-block text-sm font-medium text-indigo-600 hover:text-indigo-500"
+            >
+              Add first device →
+            </Link>
+          </div>
         ) : (
           <div className="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm">
-            <table className="min-w-full divide-y divide-gray-200 text-sm">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-4 py-3 text-left font-medium text-gray-500">Type</th>
-                  <th className="px-4 py-3 text-left font-medium text-gray-500">Brand / Model</th>
-                  <th className="px-4 py-3 text-left font-medium text-gray-500">Serial</th>
-                  <th className="px-4 py-3" />
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {devices.map((device) => (
-                  <tr key={device.id} className="hover:bg-gray-50">
-                    <td className="px-4 py-3 text-gray-600">{device.type}</td>
-                    <td className="px-4 py-3 font-medium text-gray-900">
-                      {device.brand} {device.model}
-                    </td>
-                    <td className="px-4 py-3 text-gray-500">{device.serialNumber ?? '—'}</td>
-                    <td className="px-4 py-3 text-right">
-                      <Link
-                        href={`/customers/${id}/devices/${device.id}`}
-                        className="text-indigo-600 hover:text-indigo-800"
-                      >
-                        View
-                      </Link>
-                    </td>
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-gray-500">
+                      Type
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-gray-500">
+                      Brand / Model
+                    </th>
+                    <th className="hidden px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-gray-500 sm:table-cell">
+                      Serial
+                    </th>
+                    <th className="px-4 py-3" />
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="divide-y divide-gray-100 bg-white">
+                  {devices.map((device) => (
+                    <tr key={device.id} className="hover:bg-gray-50">
+                      <td className="px-4 py-3 text-sm capitalize text-gray-600">
+                        {device.type.toLowerCase()}
+                      </td>
+                      <td className="px-4 py-3 text-sm font-medium text-gray-900">
+                        {device.brand} {device.model}
+                      </td>
+                      <td className="hidden px-4 py-3 text-sm text-gray-500 sm:table-cell">
+                        {device.serialNumber ?? '—'}
+                      </td>
+                      <td className="px-4 py-3 text-right">
+                        <Link
+                          href={`/customers/${id}/devices/${device.id}`}
+                          className="text-sm font-medium text-indigo-600 hover:text-indigo-800"
+                        >
+                          View
+                        </Link>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
       </div>
@@ -112,7 +132,7 @@ export default async function CustomerDetailPage({ params }: Props) {
 
 function Row({ label, value }: { label: string; value: string }) {
   return (
-    <div className="grid grid-cols-3 gap-4 px-4 py-3">
+    <div className="grid grid-cols-3 gap-4 px-5 py-3.5">
       <dt className="text-sm font-medium text-gray-500">{label}</dt>
       <dd className="col-span-2 text-sm text-gray-900">{value}</dd>
     </div>

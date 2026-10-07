@@ -52,24 +52,32 @@ export default async function TicketsPage({ searchParams }: PageProps) {
   return (
     <div>
       <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">Repair Tickets</h1>
+        <h1 className="text-2xl font-semibold text-gray-900">Tickets</h1>
         <Link
           href="/tickets/new"
-          className="rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700"
+          className="inline-flex items-center rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
         >
-          New Ticket
+          New ticket
         </Link>
       </div>
 
-      <form method="GET" className="mb-4 flex gap-3">
+      <form method="GET" className="mb-5 flex flex-wrap items-center gap-2">
+        <label htmlFor="ticket-search" className="sr-only">
+          Search tickets
+        </label>
         <input
+          id="ticket-search"
           type="text"
           name="search"
           defaultValue={search}
           placeholder="Search by ticket # or customer…"
-          className="w-64 rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+          className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 sm:w-64"
         />
+        <label htmlFor="ticket-status" className="sr-only">
+          Filter by status
+        </label>
         <select
+          id="ticket-status"
           name="status"
           defaultValue={status ?? ''}
           className="rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
@@ -82,14 +90,14 @@ export default async function TicketsPage({ searchParams }: PageProps) {
         </select>
         <button
           type="submit"
-          className="rounded-md bg-gray-100 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-200"
+          className="inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-300"
         >
           Filter
         </button>
         {(search || status) && (
           <Link
             href="/tickets"
-            className="rounded-md px-3 py-2 text-sm font-medium text-gray-500 hover:text-gray-700"
+            className="inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50"
           >
             Clear
           </Link>
@@ -97,61 +105,81 @@ export default async function TicketsPage({ searchParams }: PageProps) {
       </form>
 
       <div className="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
-            <tr>
-              <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                Ticket #
-              </th>
-              <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                Customer
-              </th>
-              <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                Device
-              </th>
-              <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                Status
-              </th>
-              <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                Technician
-              </th>
-              <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                Received
-              </th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-200">
-            {tickets.length === 0 && (
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-50">
               <tr>
-                <td colSpan={6} className="px-4 py-8 text-center text-sm text-gray-500">
-                  No tickets found.
-                </td>
+                <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-gray-500">
+                  Ticket #
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-gray-500">
+                  Customer
+                </th>
+                <th className="hidden px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-gray-500 sm:table-cell">
+                  Device
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-gray-500">
+                  Status
+                </th>
+                <th className="hidden px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-gray-500 md:table-cell">
+                  Technician
+                </th>
+                <th className="hidden px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-gray-500 lg:table-cell">
+                  Received
+                </th>
               </tr>
-            )}
-            {tickets.map((ticket) => (
-              <tr key={ticket.id} className="hover:bg-gray-50">
-                <td className="px-4 py-3 text-sm font-medium">
-                  <Link href={`/tickets/${ticket.id}`} className="text-indigo-600 hover:text-indigo-800">
-                    {ticket.ticketNumber}
-                  </Link>
-                </td>
-                <td className="px-4 py-3 text-sm text-gray-900">{ticket.customer.name}</td>
-                <td className="px-4 py-3 text-sm text-gray-600">
-                  {ticket.device.brand} {ticket.device.model}
-                </td>
-                <td className="px-4 py-3">
-                  <TicketStatusBadge status={ticket.status} />
-                </td>
-                <td className="px-4 py-3 text-sm text-gray-600">
-                  {ticket.assignedTo?.name ?? <span className="text-gray-400">Unassigned</span>}
-                </td>
-                <td className="px-4 py-3 text-sm text-gray-600">
-                  {new Date(ticket.receivedAt).toLocaleDateString()}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody className="divide-y divide-gray-100 bg-white">
+              {tickets.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="px-4 py-12 text-center">
+                    <p className="text-sm text-gray-500">
+                      {search || status
+                        ? 'No tickets match your filters.'
+                        : 'No tickets yet.'}
+                    </p>
+                    {!search && !status && (
+                      <Link
+                        href="/tickets/new"
+                        className="mt-2 inline-block text-sm font-medium text-indigo-600 hover:text-indigo-500"
+                      >
+                        Create first ticket →
+                      </Link>
+                    )}
+                  </td>
+                </tr>
+              ) : (
+                tickets.map((ticket) => (
+                  <tr key={ticket.id} className="hover:bg-gray-50">
+                    <td className="px-4 py-3 text-sm font-medium">
+                      <Link
+                        href={`/tickets/${ticket.id}`}
+                        className="text-indigo-600 hover:text-indigo-800"
+                      >
+                        {ticket.ticketNumber}
+                      </Link>
+                    </td>
+                    <td className="px-4 py-3 text-sm text-gray-900">{ticket.customer.name}</td>
+                    <td className="hidden px-4 py-3 text-sm text-gray-600 sm:table-cell">
+                      {ticket.device.brand} {ticket.device.model}
+                    </td>
+                    <td className="px-4 py-3">
+                      <TicketStatusBadge status={ticket.status} />
+                    </td>
+                    <td className="hidden px-4 py-3 text-sm text-gray-600 md:table-cell">
+                      {ticket.assignedTo?.name ?? (
+                        <span className="text-gray-400">Unassigned</span>
+                      )}
+                    </td>
+                    <td className="hidden px-4 py-3 text-sm text-gray-500 lg:table-cell">
+                      {new Date(ticket.receivedAt).toLocaleDateString()}
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       {meta.total > meta.limit && (
@@ -164,7 +192,7 @@ export default async function TicketsPage({ searchParams }: PageProps) {
             {meta.page > 1 && (
               <Link
                 href={`/tickets${buildQuery({ page: String(meta.page - 1) })}`}
-                className="rounded border px-3 py-1 hover:bg-gray-100"
+                className="inline-flex items-center rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
               >
                 Previous
               </Link>
@@ -172,7 +200,7 @@ export default async function TicketsPage({ searchParams }: PageProps) {
             {meta.page * meta.limit < meta.total && (
               <Link
                 href={`/tickets${buildQuery({ page: String(meta.page + 1) })}`}
-                className="rounded border px-3 py-1 hover:bg-gray-100"
+                className="inline-flex items-center rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
               >
                 Next
               </Link>

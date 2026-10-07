@@ -10,9 +10,12 @@ export default async function DashboardPage() {
     data = await getDashboard();
   } catch {
     return (
-      <div className="rounded-lg border border-red-200 bg-red-50 p-6 text-center">
-        <p className="font-medium text-red-700">Failed to load dashboard</p>
-        <p className="mt-1 text-sm text-red-500">
+      <div
+        role="alert"
+        className="rounded-md border border-red-200 bg-red-50 p-6 text-center"
+      >
+        <p className="font-semibold text-red-700">Failed to load dashboard</p>
+        <p className="mt-1 text-sm text-red-600">
           Check your connection and refresh the page.
         </p>
       </div>
@@ -48,7 +51,7 @@ export default async function DashboardPage() {
 
   return (
     <div className="space-y-8">
-      <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
+      <h1 className="text-2xl font-semibold text-gray-900">Dashboard</h1>
 
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
         <StatCard label="Total Customers" value={data.totalCustomers} accent="blue" />

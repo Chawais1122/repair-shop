@@ -84,44 +84,55 @@ export function DeviceForm({ mode, customerId, device }: Props) {
   return (
     <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-5">
       {errors.root && (
-        <p role="alert" className="rounded bg-red-50 p-3 text-sm text-red-700">
+        <div
+          role="alert"
+          className="rounded-md border border-red-200 bg-red-50 p-4 text-sm text-red-700"
+        >
           {errors.root.message}
-        </p>
+        </div>
       )}
 
       <div className="grid gap-5 sm:grid-cols-2">
         <div>
           <label htmlFor="type" className="block text-sm font-medium text-gray-700">
-            Device type <span className="text-red-500">*</span>
+            Device type <span className="text-red-500" aria-hidden="true">*</span>
           </label>
-          <select
-            id="type"
-            {...register('type')}
-            className={inputCls}
-          >
+          <select id="type" {...register('type')} className={inputCls}>
             {Object.entries(DEVICE_TYPE_LABELS).map(([value, label]) => (
               <option key={value} value={value}>
                 {label}
               </option>
             ))}
           </select>
-          {errors.type && <p className="mt-1 text-xs text-red-600">{errors.type.message}</p>}
+          {errors.type && (
+            <p role="alert" className="mt-1.5 text-xs text-red-600">
+              {errors.type.message}
+            </p>
+          )}
         </div>
 
         <div>
           <label htmlFor="brand" className="block text-sm font-medium text-gray-700">
-            Brand <span className="text-red-500">*</span>
+            Brand <span className="text-red-500" aria-hidden="true">*</span>
           </label>
           <input id="brand" type="text" {...register('brand')} className={inputCls} />
-          {errors.brand && <p className="mt-1 text-xs text-red-600">{errors.brand.message}</p>}
+          {errors.brand && (
+            <p role="alert" className="mt-1.5 text-xs text-red-600">
+              {errors.brand.message}
+            </p>
+          )}
         </div>
 
         <div>
           <label htmlFor="model" className="block text-sm font-medium text-gray-700">
-            Model <span className="text-red-500">*</span>
+            Model <span className="text-red-500" aria-hidden="true">*</span>
           </label>
           <input id="model" type="text" {...register('model')} className={inputCls} />
-          {errors.model && <p className="mt-1 text-xs text-red-600">{errors.model.message}</p>}
+          {errors.model && (
+            <p role="alert" className="mt-1.5 text-xs text-red-600">
+              {errors.model.message}
+            </p>
+          )}
         </div>
 
         <div>
@@ -130,7 +141,9 @@ export function DeviceForm({ mode, customerId, device }: Props) {
           </label>
           <input id="serialNumber" type="text" {...register('serialNumber')} className={inputCls} />
           {errors.serialNumber && (
-            <p className="mt-1 text-xs text-red-600">{errors.serialNumber.message}</p>
+            <p role="alert" className="mt-1.5 text-xs text-red-600">
+              {errors.serialNumber.message}
+            </p>
           )}
         </div>
 
@@ -139,21 +152,33 @@ export function DeviceForm({ mode, customerId, device }: Props) {
             IMEI
           </label>
           <input id="imei" type="text" {...register('imei')} className={inputCls} />
-          {errors.imei && <p className="mt-1 text-xs text-red-600">{errors.imei.message}</p>}
+          {errors.imei && (
+            <p role="alert" className="mt-1.5 text-xs text-red-600">
+              {errors.imei.message}
+            </p>
+          )}
         </div>
 
         <div>
           <label htmlFor="passcode" className="block text-sm font-medium text-gray-700">
             Passcode / PIN
           </label>
-          <input id="passcode" type="password" autoComplete="off" {...register('passcode')} className={inputCls} />
+          <input
+            id="passcode"
+            type="password"
+            autoComplete="off"
+            {...register('passcode')}
+            className={inputCls}
+          />
           {mode === 'edit' && device?.hasPasscode && (
-            <p className="mt-1 text-xs text-gray-500">
+            <p className="mt-1.5 text-xs text-gray-500">
               A passcode is stored. Enter a new value to replace it, or leave blank to keep it.
             </p>
           )}
           {errors.passcode && (
-            <p className="mt-1 text-xs text-red-600">{errors.passcode.message}</p>
+            <p role="alert" className="mt-1.5 text-xs text-red-600">
+              {errors.passcode.message}
+            </p>
           )}
         </div>
       </div>
@@ -163,14 +188,25 @@ export function DeviceForm({ mode, customerId, device }: Props) {
           Notes
         </label>
         <textarea id="notes" rows={3} {...register('notes')} className={inputCls} />
-        {errors.notes && <p className="mt-1 text-xs text-red-600">{errors.notes.message}</p>}
+        {errors.notes && (
+          <p role="alert" className="mt-1.5 text-xs text-red-600">
+            {errors.notes.message}
+          </p>
+        )}
       </div>
 
-      <div className="flex gap-3">
+      <div className="flex justify-end gap-3 pt-1">
+        <button
+          type="button"
+          onClick={() => router.back()}
+          className="inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-300"
+        >
+          Cancel
+        </button>
         <button
           type="submit"
           disabled={isSubmitting}
-          className="rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-500 disabled:opacity-60"
+          className="inline-flex items-center rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:cursor-not-allowed disabled:opacity-50"
         >
           {isSubmitting
             ? mode === 'create'
@@ -179,13 +215,6 @@ export function DeviceForm({ mode, customerId, device }: Props) {
             : mode === 'create'
               ? 'Add device'
               : 'Save changes'}
-        </button>
-        <button
-          type="button"
-          onClick={() => router.back()}
-          className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50"
-        >
-          Cancel
         </button>
       </div>
     </form>

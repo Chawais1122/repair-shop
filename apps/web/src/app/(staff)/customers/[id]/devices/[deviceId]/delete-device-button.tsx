@@ -34,14 +34,17 @@ export function DeleteDeviceButton({ deviceId, customerId, deviceLabel }: Props)
   return (
     <div>
       {error && (
-        <p role="alert" className="mb-2 text-sm text-red-600">
+        <div
+          role="alert"
+          className="mb-2 rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700"
+        >
           {error}
-        </p>
+        </div>
       )}
       <button
         onClick={handleDelete}
         disabled={pending}
-        className="rounded-md bg-red-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-red-500 disabled:opacity-60"
+        className="inline-flex items-center rounded-md bg-red-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-red-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-600 disabled:cursor-not-allowed disabled:opacity-50"
       >
         {pending ? 'Deleting…' : 'Delete'}
       </button>

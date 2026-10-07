@@ -23,28 +23,31 @@ export default async function DeviceDetailPage({ params }: Props) {
 
   return (
     <div className="mx-auto max-w-2xl">
-      <div className="mb-6 flex items-center gap-2 text-sm text-gray-500">
+      <nav
+        className="mb-6 flex items-center gap-1.5 text-sm text-gray-500"
+        aria-label="Breadcrumb"
+      >
         <Link href="/customers" className="hover:text-indigo-600">
           Customers
         </Link>
-        <span>/</span>
+        <span aria-hidden="true">/</span>
         <Link href={`/customers/${id}`} className="hover:text-indigo-600">
           {customer.name}
         </Link>
-        <span>/</span>
+        <span aria-hidden="true">/</span>
         <span className="text-gray-900">
           {device.brand} {device.model}
         </span>
-      </div>
+      </nav>
 
-      <div className="mb-4 flex items-start justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">
+      <div className="mb-5 flex items-start justify-between gap-4">
+        <h1 className="text-2xl font-semibold text-gray-900">
           {device.brand} {device.model}
         </h1>
-        <div className="flex gap-2">
+        <div className="flex shrink-0 gap-2">
           <Link
             href={`/customers/${id}/devices/${deviceId}/edit`}
-            className="rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm font-semibold text-gray-700 hover:bg-gray-50"
+            className="inline-flex items-center rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-300"
           >
             Edit
           </Link>
@@ -58,7 +61,7 @@ export default async function DeviceDetailPage({ params }: Props) {
 
       <div className="rounded-lg border border-gray-200 bg-white shadow-sm">
         <dl className="divide-y divide-gray-100">
-          <Row label="Type" value={device.type} />
+          <Row label="Type" value={device.type.charAt(0) + device.type.slice(1).toLowerCase()} />
           <Row label="Brand" value={device.brand} />
           <Row label="Model" value={device.model} />
           <Row label="Serial number" value={device.serialNumber ?? '—'} />
@@ -74,7 +77,7 @@ export default async function DeviceDetailPage({ params }: Props) {
 
 function Row({ label, value }: { label: string; value: string }) {
   return (
-    <div className="grid grid-cols-3 gap-4 px-4 py-3">
+    <div className="grid grid-cols-3 gap-4 px-5 py-3.5">
       <dt className="text-sm font-medium text-gray-500">{label}</dt>
       <dd className="col-span-2 text-sm text-gray-900">{value}</dd>
     </div>

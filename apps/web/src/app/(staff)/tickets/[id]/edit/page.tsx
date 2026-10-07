@@ -21,15 +21,19 @@ export default async function EditTicketPage({ params }: PageProps) {
 
   return (
     <div className="mx-auto max-w-2xl">
-      <div className="mb-6 flex items-center gap-3">
-        <Link
-          href={`/tickets/${id}`}
-          className="text-sm text-gray-500 hover:text-gray-700"
-        >
-          ← {ticket.ticketNumber}
+      <nav className="mb-6 flex items-center gap-1.5 text-sm text-gray-500" aria-label="Breadcrumb">
+        <Link href="/tickets" className="hover:text-indigo-600">
+          Tickets
         </Link>
-        <h1 className="text-2xl font-bold text-gray-900">Edit Ticket</h1>
-      </div>
+        <span aria-hidden="true">/</span>
+        <Link href={`/tickets/${id}`} className="hover:text-indigo-600">
+          {ticket.ticketNumber}
+        </Link>
+        <span aria-hidden="true">/</span>
+        <span className="text-gray-900">Edit</span>
+      </nav>
+
+      <h1 className="mb-6 text-2xl font-semibold text-gray-900">Edit ticket</h1>
 
       <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
         <EditTicketForm ticket={ticket} />

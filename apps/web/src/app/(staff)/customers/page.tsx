@@ -17,7 +17,13 @@ export default async function CustomersPage({ searchParams }: Props) {
   } catch (err) {
     if (err instanceof ApiError && err.status === 401) {
       return (
-        <p className="text-sm text-red-600">Your session has expired. Please sign in again.</p>
+        <div role="alert" className="rounded-md border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+          Your session has expired. Please{' '}
+          <Link href="/login" className="font-medium underline">
+            sign in again
+          </Link>
+          .
+        </div>
       );
     }
     throw err;
@@ -35,34 +41,38 @@ export default async function CustomersPage({ searchParams }: Props) {
   return (
     <div>
       <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">Customers</h1>
+        <h1 className="text-2xl font-semibold text-gray-900">Customers</h1>
         <Link
           href="/customers/new"
-          className="rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-500"
+          className="inline-flex items-center rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
         >
           Add customer
         </Link>
       </div>
 
-      <form action="/customers" method="get" className="mb-4 flex gap-2">
+      <form action="/customers" method="get" className="mb-5 flex flex-wrap gap-2">
+        <label htmlFor="customer-search" className="sr-only">
+          Search customers
+        </label>
         <input
+          id="customer-search"
           type="text"
           name="search"
           defaultValue={search}
           placeholder="Search by name, phone, or email…"
-          className="w-72 rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+          className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 sm:w-72"
         />
         <input type="hidden" name="page" value="1" />
         <button
           type="submit"
-          className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+          className="inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-300"
         >
           Search
         </button>
         {search && (
           <Link
             href="/customers"
-            className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+            className="inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50"
           >
             Clear
           </Link>
@@ -70,46 +80,71 @@ export default async function CustomersPage({ searchParams }: Props) {
       </form>
 
       {customers.length === 0 ? (
-        <p className="mt-8 text-center text-sm text-gray-500">
-          {search ? `No customers found for "${search}"` : 'No customers yet.'}
-        </p>
+        <div className="rounded-lg border-2 border-dashed border-gray-200 p-10 text-center">
+          <p className="text-sm text-gray-500">
+            {search ? `No customers found for "${search}".` : 'No customers yet.'}
+          </p>
+          {!search && (
+            <Link
+              href="/customers/new"
+              className="mt-2 inline-block text-sm font-medium text-indigo-600 hover:text-indigo-500"
+            >
+              Add your first customer →
+            </Link>
+          )}
+        </div>
       ) : (
         <div className="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm">
-          <table className="min-w-full divide-y divide-gray-200 text-sm">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-4 py-3 text-left font-medium text-gray-500">Name</th>
-                <th className="px-4 py-3 text-left font-medium text-gray-500">Phone</th>
-                <th className="px-4 py-3 text-left font-medium text-gray-500">Email</th>
-                <th className="px-4 py-3 text-left font-medium text-gray-500">Added</th>
-                <th className="px-4 py-3" />
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100">
-              {customers.map((c) => (
-                <tr key={c.id} className="hover:bg-gray-50">
-                  <td className="px-4 py-3 font-medium text-gray-900">
-                    <Link href={`/customers/${c.id}`} className="hover:text-indigo-600">
-                      {c.name}
-                    </Link>
-                  </td>
-                  <td className="px-4 py-3 text-gray-600">{c.phone}</td>
-                  <td className="px-4 py-3 text-gray-600">{c.email ?? '—'}</td>
-                  <td className="px-4 py-3 text-gray-500">
-                    {new Date(c.createdAt).toLocaleDateString()}
-                  </td>
-                  <td className="px-4 py-3 text-right">
-                    <Link
-                      href={`/customers/${c.id}`}
-                      className="text-indigo-600 hover:text-indigo-800"
-                    >
-                      View
-                    </Link>
-                  </td>
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-gray-500">
+                    Name
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-gray-500">
+                    Phone
+                  </th>
+                  <th className="hidden px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-gray-500 sm:table-cell">
+                    Email
+                  </th>
+                  <th className="hidden px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-gray-500 sm:table-cell">
+                    Added
+                  </th>
+                  <th className="px-4 py-3" />
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="divide-y divide-gray-100 bg-white">
+                {customers.map((c) => (
+                  <tr key={c.id} className="hover:bg-gray-50">
+                    <td className="px-4 py-3 font-medium text-gray-900">
+                      <Link
+                        href={`/customers/${c.id}`}
+                        className="hover:text-indigo-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-indigo-500"
+                      >
+                        {c.name}
+                      </Link>
+                    </td>
+                    <td className="px-4 py-3 text-sm text-gray-600">{c.phone}</td>
+                    <td className="hidden px-4 py-3 text-sm text-gray-600 sm:table-cell">
+                      {c.email ?? '—'}
+                    </td>
+                    <td className="hidden px-4 py-3 text-sm text-gray-500 sm:table-cell">
+                      {new Date(c.createdAt).toLocaleDateString()}
+                    </td>
+                    <td className="px-4 py-3 text-right">
+                      <Link
+                        href={`/customers/${c.id}`}
+                        className="text-sm font-medium text-indigo-600 hover:text-indigo-800"
+                      >
+                        View
+                      </Link>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
 
           <div className="px-4 py-3">
             <Pagination meta={meta} buildHref={buildHref} />

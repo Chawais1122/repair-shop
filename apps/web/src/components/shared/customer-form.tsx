@@ -12,6 +12,9 @@ interface Props {
   customer?: Customer;
 }
 
+const inputCls =
+  'mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500';
+
 export function CustomerForm({ mode, customer }: Props) {
   const router = useRouter();
 
@@ -67,63 +70,60 @@ export function CustomerForm({ mode, customer }: Props) {
   return (
     <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-5">
       {errors.root && (
-        <p role="alert" className="rounded bg-red-50 p-3 text-sm text-red-700">
+        <div
+          role="alert"
+          className="rounded-md border border-red-200 bg-red-50 p-4 text-sm text-red-700"
+        >
           {errors.root.message}
-        </p>
+        </div>
       )}
 
       <div className="grid gap-5 sm:grid-cols-2">
         <div>
           <label htmlFor="name" className="block text-sm font-medium text-gray-700">
-            Name <span className="text-red-500">*</span>
+            Name <span className="text-red-500" aria-hidden="true">*</span>
           </label>
-          <input
-            id="name"
-            type="text"
-            {...register('name')}
-            className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-          />
-          {errors.name && <p className="mt-1 text-xs text-red-600">{errors.name.message}</p>}
+          <input id="name" type="text" {...register('name')} className={inputCls} />
+          {errors.name && (
+            <p role="alert" className="mt-1.5 text-xs text-red-600">
+              {errors.name.message}
+            </p>
+          )}
         </div>
 
         <div>
           <label htmlFor="phone" className="block text-sm font-medium text-gray-700">
-            Phone <span className="text-red-500">*</span>
+            Phone <span className="text-red-500" aria-hidden="true">*</span>
           </label>
-          <input
-            id="phone"
-            type="tel"
-            {...register('phone')}
-            className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-          />
-          {errors.phone && <p className="mt-1 text-xs text-red-600">{errors.phone.message}</p>}
+          <input id="phone" type="tel" {...register('phone')} className={inputCls} />
+          {errors.phone && (
+            <p role="alert" className="mt-1.5 text-xs text-red-600">
+              {errors.phone.message}
+            </p>
+          )}
         </div>
 
         <div>
           <label htmlFor="email" className="block text-sm font-medium text-gray-700">
             Email
           </label>
-          <input
-            id="email"
-            type="email"
-            {...register('email')}
-            className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-          />
-          {errors.email && <p className="mt-1 text-xs text-red-600">{errors.email.message}</p>}
+          <input id="email" type="email" {...register('email')} className={inputCls} />
+          {errors.email && (
+            <p role="alert" className="mt-1.5 text-xs text-red-600">
+              {errors.email.message}
+            </p>
+          )}
         </div>
 
         <div>
           <label htmlFor="address" className="block text-sm font-medium text-gray-700">
             Address
           </label>
-          <input
-            id="address"
-            type="text"
-            {...register('address')}
-            className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-          />
+          <input id="address" type="text" {...register('address')} className={inputCls} />
           {errors.address && (
-            <p className="mt-1 text-xs text-red-600">{errors.address.message}</p>
+            <p role="alert" className="mt-1.5 text-xs text-red-600">
+              {errors.address.message}
+            </p>
           )}
         </div>
       </div>
@@ -132,20 +132,26 @@ export function CustomerForm({ mode, customer }: Props) {
         <label htmlFor="notes" className="block text-sm font-medium text-gray-700">
           Notes
         </label>
-        <textarea
-          id="notes"
-          rows={3}
-          {...register('notes')}
-          className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-        />
-        {errors.notes && <p className="mt-1 text-xs text-red-600">{errors.notes.message}</p>}
+        <textarea id="notes" rows={3} {...register('notes')} className={inputCls} />
+        {errors.notes && (
+          <p role="alert" className="mt-1.5 text-xs text-red-600">
+            {errors.notes.message}
+          </p>
+        )}
       </div>
 
-      <div className="flex gap-3">
+      <div className="flex justify-end gap-3 pt-1">
+        <button
+          type="button"
+          onClick={() => router.back()}
+          className="inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-300"
+        >
+          Cancel
+        </button>
         <button
           type="submit"
           disabled={isSubmitting}
-          className="rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-500 disabled:opacity-60"
+          className="inline-flex items-center rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:cursor-not-allowed disabled:opacity-50"
         >
           {isSubmitting
             ? mode === 'create'
@@ -154,13 +160,6 @@ export function CustomerForm({ mode, customer }: Props) {
             : mode === 'create'
               ? 'Create customer'
               : 'Save changes'}
-        </button>
-        <button
-          type="button"
-          onClick={() => router.back()}
-          className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50"
-        >
-          Cancel
         </button>
       </div>
     </form>

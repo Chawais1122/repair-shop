@@ -13,6 +13,13 @@ interface PageProps {
   params: Promise<{ id: string }>;
 }
 
+const PRIORITY_STYLES: Record<string, string> = {
+  LOW: 'text-gray-500',
+  NORMAL: 'text-blue-600',
+  HIGH: 'text-orange-600',
+  URGENT: 'text-red-600 font-semibold',
+};
+
 export default async function TicketDetailPage({ params }: PageProps) {
   const { id } = await params;
 
@@ -29,78 +36,85 @@ export default async function TicketDetailPage({ params }: PageProps) {
     getPaymentSummary(id),
   ]);
 
-  const priorityColors: Record<string, string> = {
-    LOW: 'text-gray-500',
-    NORMAL: 'text-blue-600',
-    HIGH: 'text-orange-600',
-    URGENT: 'text-red-600',
-  };
-
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <Link href="/tickets" className="text-sm text-gray-500 hover:text-gray-700">
-            ← Tickets
+      {/* Header */}
+      <div>
+        <nav className="mb-2 flex items-center gap-1.5 text-sm text-gray-500" aria-label="Breadcrumb">
+          <Link href="/tickets" className="hover:text-indigo-600">
+            Tickets
           </Link>
-          <h1 className="text-2xl font-bold text-gray-900">{ticket.ticketNumber}</h1>
-          <TicketStatusBadge status={ticket.status} />
+          <span aria-hidden="true">/</span>
+          <span className="text-gray-900">{ticket.ticketNumber}</span>
+        </nav>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <h1 className="text-2xl font-semibold text-gray-900">{ticket.ticketNumber}</h1>
+            <TicketStatusBadge status={ticket.status} />
+          </div>
+          <Link
+            href={`/tickets/${id}/edit`}
+            className="inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-300"
+          >
+            Edit ticket
+          </Link>
         </div>
-        <Link
-          href={`/tickets/${id}/edit`}
-          className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
-        >
-          Edit
-        </Link>
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        <div className="lg:col-span-2 space-y-6">
+        {/* Main column */}
+        <div className="space-y-6 lg:col-span-2">
           <section className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm">
             <h2 className="mb-4 text-base font-semibold text-gray-900">Ticket Details</h2>
-            <dl className="grid grid-cols-2 gap-x-4 gap-y-3 text-sm">
+            <dl className="grid grid-cols-2 gap-x-6 gap-y-4 text-sm">
               <div>
                 <dt className="text-gray-500">Priority</dt>
-                <dd className={`font-medium capitalize ${priorityColors[ticket.priority] ?? ''}`}>
+                <dd className={`mt-0.5 capitalize ${PRIORITY_STYLES[ticket.priority] ?? 'text-gray-900'}`}>
                   {ticket.priority.toLowerCase()}
                 </dd>
               </div>
               <div>
                 <dt className="text-gray-500">Received</dt>
-                <dd>{new Date(ticket.receivedAt).toLocaleDateString()}</dd>
+                <dd className="mt-0.5 text-gray-900">
+                  {new Date(ticket.receivedAt).toLocaleDateString()}
+                </dd>
               </div>
               {ticket.expectedCompletionAt && (
                 <div>
-                  <dt className="text-gray-500">Expected By</dt>
-                  <dd>{new Date(ticket.expectedCompletionAt).toLocaleDateString()}</dd>
+                  <dt className="text-gray-500">Expected by</dt>
+                  <dd className="mt-0.5 text-gray-900">
+                    {new Date(ticket.expectedCompletionAt).toLocaleDateString()}
+                  </dd>
                 </div>
               )}
               {ticket.completedAt && (
                 <div>
                   <dt className="text-gray-500">Completed</dt>
-                  <dd>{new Date(ticket.completedAt).toLocaleDateString()}</dd>
+                  <dd className="mt-0.5 text-gray-900">
+                    {new Date(ticket.completedAt).toLocaleDateString()}
+                  </dd>
                 </div>
               )}
               <div className="col-span-2">
-                <dt className="text-gray-500">Problem Reported</dt>
-                <dd className="mt-1 whitespace-pre-wrap">{ticket.reportedProblem}</dd>
+                <dt className="text-gray-500">Problem reported</dt>
+                <dd className="mt-1 whitespace-pre-wrap text-gray-900">{ticket.reportedProblem}</dd>
               </div>
               {ticket.diagnosis && (
                 <div className="col-span-2">
                   <dt className="text-gray-500">Diagnosis</dt>
-                  <dd className="mt-1 whitespace-pre-wrap">{ticket.diagnosis}</dd>
+                  <dd className="mt-1 whitespace-pre-wrap text-gray-900">{ticket.diagnosis}</dd>
                 </div>
               )}
               {ticket.estimatedCost !== null && (
                 <div>
                   <dt className="text-gray-500">Estimate</dt>
-                  <dd className="font-medium">${ticket.estimatedCost}</dd>
+                  <dd className="mt-0.5 font-medium text-gray-900">${ticket.estimatedCost}</dd>
                 </div>
               )}
               {ticket.finalCost !== null && (
                 <div>
-                  <dt className="text-gray-500">Final Cost</dt>
-                  <dd className="font-medium">${ticket.finalCost}</dd>
+                  <dt className="text-gray-500">Final cost</dt>
+                  <dd className="mt-0.5 font-medium text-gray-900">${ticket.finalCost}</dd>
                 </div>
               )}
             </dl>
@@ -111,24 +125,31 @@ export default async function TicketDetailPage({ params }: PageProps) {
           </section>
         </div>
 
-        <div className="space-y-6">
+        {/* Sidebar column */}
+        <div className="space-y-4">
           <section className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm">
-            <h2 className="mb-3 text-base font-semibold text-gray-900">Customer</h2>
+            <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-gray-500">
+              Customer
+            </h2>
             <Link
               href={`/customers/${ticket.customer.id}`}
               className="text-sm font-medium text-indigo-600 hover:text-indigo-800"
             >
               {ticket.customer.name}
             </Link>
-            <p className="mt-1 text-sm text-gray-500">{ticket.customer.phone}</p>
+            <p className="mt-0.5 text-sm text-gray-500">{ticket.customer.phone}</p>
           </section>
 
           <section className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm">
-            <h2 className="mb-3 text-base font-semibold text-gray-900">Device</h2>
+            <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-gray-500">
+              Device
+            </h2>
             <p className="text-sm font-medium text-gray-900">
               {ticket.device.brand} {ticket.device.model}
             </p>
-            <p className="text-sm text-gray-500 capitalize">{ticket.device.type.toLowerCase()}</p>
+            <p className="mt-0.5 text-sm capitalize text-gray-500">
+              {ticket.device.type.toLowerCase()}
+            </p>
           </section>
 
           <section className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm">
