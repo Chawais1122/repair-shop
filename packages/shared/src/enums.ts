@@ -1,0 +1,44 @@
+export enum UserRole {
+  ADMIN = 'ADMIN',
+  STAFF = 'STAFF',
+  TECHNICIAN = 'TECHNICIAN',
+}
+
+export enum DeviceType {
+  PHONE = 'PHONE',
+  TABLET = 'TABLET',
+  LAPTOP = 'LAPTOP',
+  DESKTOP = 'DESKTOP',
+  WATCH = 'WATCH',
+  OTHER = 'OTHER',
+}
+
+export enum Priority {
+  LOW = 'LOW',
+  NORMAL = 'NORMAL',
+  HIGH = 'HIGH',
+  URGENT = 'URGENT',
+}
+
+export enum TicketStatus {
+  RECEIVED = 'RECEIVED',
+  DIAGNOSING = 'DIAGNOSING',
+  WAITING_APPROVAL = 'WAITING_APPROVAL',
+  APPROVED = 'APPROVED',
+  REPAIRING = 'REPAIRING',
+  READY = 'READY',
+  DELIVERED = 'DELIVERED',
+  CANCELLED = 'CANCELLED',
+}
+
+export enum PaymentMethod {
+  CASH = 'CASH',
+  CARD = 'CARD',
+  BANK_TRANSFER = 'BANK_TRANSFER',
+}
+
+export enum PaymentStatus {
+  PENDING = 'PENDING',
+  COMPLETED = 'COMPLETED',
+  REFUNDED = 'REFUNDED',
+}

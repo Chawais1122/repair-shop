@@ -1,0 +1,182 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Enums ────────────────────────────────────────────────────────────────────
+
+enum UserRole {
+  ADMIN
+  STAFF
+  TECHNICIAN
+}
+
+enum DeviceType {
+  PHONE
+  TABLET
+  LAPTOP
+  DESKTOP
+  WATCH
+  OTHER
+}
+
+enum Priority {
+  LOW
+  NORMAL
+  HIGH
+  URGENT
+}
+
+enum TicketStatus {
+  RECEIVED
+  DIAGNOSING
+  WAITING_APPROVAL
+  APPROVED
+  REPAIRING
+  READY
+  DELIVERED
+  CANCELLED
+}
+
+enum PaymentMethod {
+  CASH
+  CARD
+  BANK_TRANSFER
+}
+
+enum PaymentStatus {
+  PENDING
+  COMPLETED
+  REFUNDED
+}
+
+// ─── Models ───────────────────────────────────────────────────────────────────
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  name         String
+  role         UserRole @default(STAFF)
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  assignedTickets     RepairTicket[]        @relation("AssignedTo")
+  createdTickets      RepairTicket[]        @relation("CreatedBy")
+  statusChanges       TicketStatusHistory[]
+
+  @@index([email])
+  @@map("users")
+}
+
+model Customer {
+  id        String   @id @default(cuid())
+  name      String
+  phone     String   @unique
+  email     String?
+  address   String?
+  notes     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  devices Device[]
+  tickets RepairTicket[]
+
+  @@index([name])
+  @@index([phone])
+  @@map("customers")
+}
+
+model Device {
+  id           String     @id @default(cuid())
+  customerId   String
+  type         DeviceType
+  brand        String
+  model        String
+  serialNumber String?
+  imei         String?
+  notes        String?
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  customer Customer      @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  tickets  RepairTicket[]
+
+  @@index([customerId])
+  @@map("devices")
+}
+
+model RepairTicket {
+  id                   String       @id @default(cuid())
+  ticketNumber         String       @unique
+  customerId           String
+  deviceId             String
+  assignedToId         String?
+  createdById          String
+  status               TicketStatus @default(RECEIVED)
+  priority             Priority     @default(NORMAL)
+  reportedProblem      String
+  diagnosis            String?
+  repairNotes          String?
+  estimatedCost        Decimal?     @db.Decimal(10, 2)
+  finalCost            Decimal?     @db.Decimal(10, 2)
+  receivedAt           DateTime     @default(now())
+  expectedCompletionAt DateTime?
+  completedAt          DateTime?
+  createdAt            DateTime     @default(now())
+  updatedAt            DateTime     @updatedAt
+
+  customer   Customer @relation(fields: [customerId], references: [id], onDelete: Restrict)
+  device     Device   @relation(fields: [deviceId], references: [id], onDelete: Restrict)
+  assignedTo User?    @relation("AssignedTo", fields: [assignedToId], references: [id], onDelete: SetNull)
+  createdBy  User     @relation("CreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
+
+  statusHistory TicketStatusHistory[]
+  payments      Payment[]
+
+  @@index([status])
+  @@index([customerId])
+  @@index([assignedToId])
+  @@index([ticketNumber])
+  @@index([status, createdAt])
+  @@map("repair_tickets")
+}
+
+// Append-only audit log. Never updated, only inserted.
+model TicketStatusHistory {
+  id          String        @id @default(cuid())
+  ticketId    String
+  fromStatus  TicketStatus?
+  toStatus    TicketStatus
+  changedById String
+  notes       String?
+  changedAt   DateTime      @default(now())
+
+  ticket    RepairTicket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  changedBy User         @relation(fields: [changedById], references: [id], onDelete: Restrict)
+
+  @@index([ticketId])
+  @@map("ticket_status_history")
+}
+
+model Payment {
+  id        String        @id @default(cuid())
+  ticketId  String
+  amount    Decimal       @db.Decimal(10, 2)
+  method    PaymentMethod
+  status    PaymentStatus @default(PENDING)
+  paidAt    DateTime?
+  notes     String?
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+
+  ticket RepairTicket @relation(fields: [ticketId], references: [id], onDelete: Restrict)
+
+  @@index([ticketId])
+  @@map("payments")
+}

@@ -1,0 +1,19 @@
+# Development overrides: hot-reload volumes + Adminer DB admin UI
+services:
+  adminer:
+    image: adminer:4
+    restart: unless-stopped
+    ports:
+      - '8080:8080'
+    depends_on:
+      - postgres
+
+  api:
+    volumes:
+      - ./apps/api/src:/app/apps/api/src
+      - ./packages:/app/packages
+
+  web:
+    volumes:
+      - ./apps/web/src:/app/apps/web/src
+      - ./packages:/app/packages
