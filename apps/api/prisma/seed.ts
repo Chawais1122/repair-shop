@@ -8,6 +8,7 @@ async function main(): Promise<void> {
 
   // Clear in FK-safe order
   await prisma.payment.deleteMany();
+  await prisma.repairNote.deleteMany();
   await prisma.ticketStatusHistory.deleteMany();
   await prisma.repairTicket.deleteMany();
   await prisma.device.deleteMany();
@@ -64,7 +65,7 @@ async function main(): Promise<void> {
   let seq = 1;
   const nextTicketNumber = (): string => `TKT-${String(seq++).padStart(5, '0')}`;
 
-  await prisma.repairTicket.create({
+  const ticket1 = await prisma.repairTicket.create({
     data: {
       ticketNumber: nextTicketNumber(),
       customerId: customer1.id,
@@ -83,7 +84,7 @@ async function main(): Promise<void> {
     },
   });
 
-  await prisma.repairTicket.create({
+  const ticket2 = await prisma.repairTicket.create({
     data: {
       ticketNumber: nextTicketNumber(),
       customerId: customer2.id,
@@ -98,7 +99,31 @@ async function main(): Promise<void> {
     },
   });
 
-  // Suppress unused variable warnings — admin is available for future seed use
+  // ── Repair Notes ───────────────────────────────────────────────────────────
+  await prisma.repairNote.createMany({
+    data: [
+      {
+        ticketId: ticket1.id,
+        authorId: technician.id,
+        content: 'LCD digitizer assembly cracked. Touch IC appears intact. Ordering replacement screen.',
+        isInternal: true,
+      },
+      {
+        ticketId: ticket1.id,
+        authorId: staff.id,
+        content: 'Customer informed of estimated cost and repair timeline. Awaiting approval.',
+        isInternal: false,
+      },
+      {
+        ticketId: ticket2.id,
+        authorId: staff.id,
+        content: 'Device checked in. Battery health at 61% — below replacement threshold.',
+        isInternal: true,
+      },
+    ],
+  });
+
+  // Suppress unused variable warnings
   void admin;
 
   console.log('\nSeeding complete.');

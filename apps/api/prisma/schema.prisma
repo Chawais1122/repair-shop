@@ -12,6 +12,7 @@ datasource db {
 enum UserRole {
   ADMIN
   STAFF
+  // Technician is a User with this role — no separate Technician entity.
   TECHNICIAN
 }
 
@@ -66,11 +67,13 @@ model User {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  assignedTickets     RepairTicket[]        @relation("AssignedTo")
-  createdTickets      RepairTicket[]        @relation("CreatedBy")
-  statusChanges       TicketStatusHistory[]
+  assignedTickets RepairTicket[]        @relation("AssignedTo")
+  createdTickets  RepairTicket[]        @relation("CreatedBy")
+  statusChanges   TicketStatusHistory[]
+  repairNotes     RepairNote[]
 
   @@index([email])
+  @@index([role])
   @@map("users")
 }
 
@@ -100,6 +103,8 @@ model Device {
   model        String
   serialNumber String?
   imei         String?
+  // Stored AES-256-GCM encrypted. Encryption key from environment variable.
+  passcode     String?
   notes        String?
   createdAt    DateTime   @default(now())
   updatedAt    DateTime   @updatedAt
@@ -108,6 +113,8 @@ model Device {
   tickets  RepairTicket[]
 
   @@index([customerId])
+  @@index([serialNumber])
+  @@index([imei])
   @@map("devices")
 }
 
@@ -122,7 +129,6 @@ model RepairTicket {
   priority             Priority     @default(NORMAL)
   reportedProblem      String
   diagnosis            String?
-  repairNotes          String?
   estimatedCost        Decimal?     @db.Decimal(10, 2)
   finalCost            Decimal?     @db.Decimal(10, 2)
   receivedAt           DateTime     @default(now())
@@ -137,17 +143,19 @@ model RepairTicket {
   createdBy  User     @relation("CreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
 
   statusHistory TicketStatusHistory[]
+  repairNotes   RepairNote[]
   payments      Payment[]
 
   @@index([status])
   @@index([customerId])
   @@index([assignedToId])
   @@index([ticketNumber])
+  @@index([priority])
   @@index([status, createdAt])
   @@map("repair_tickets")
 }
 
-// Append-only audit log. Never updated, only inserted.
+// Append-only audit log — never updated, only inserted.
 model TicketStatusHistory {
   id          String        @id @default(cuid())
   ticketId    String
@@ -161,22 +169,44 @@ model TicketStatusHistory {
   changedBy User         @relation(fields: [changedById], references: [id], onDelete: Restrict)
 
   @@index([ticketId])
+  @@index([changedAt])
   @@map("ticket_status_history")
 }
 
+// Individual notes added to a ticket by staff. isInternal=true means staff-only.
+model RepairNote {
+  id         String   @id @default(cuid())
+  ticketId   String
+  authorId   String
+  content    String
+  isInternal Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  ticket RepairTicket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  author User         @relation(fields: [authorId], references: [id], onDelete: Restrict)
+
+  @@index([ticketId])
+  @@index([authorId])
+  @@map("repair_notes")
+}
+
 model Payment {
-  id        String        @id @default(cuid())
-  ticketId  String
-  amount    Decimal       @db.Decimal(10, 2)
-  method    PaymentMethod
-  status    PaymentStatus @default(PENDING)
-  paidAt    DateTime?
-  notes     String?
-  createdAt DateTime      @default(now())
-  updatedAt DateTime      @updatedAt
+  id            String        @id @default(cuid())
+  ticketId      String
+  amount        Decimal       @db.Decimal(10, 2)
+  method        PaymentMethod
+  status        PaymentStatus @default(PENDING)
+  // Reference ID for card/bank transactions.
+  transactionId String?
+  paidAt        DateTime?
+  notes         String?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
 
   ticket RepairTicket @relation(fields: [ticketId], references: [id], onDelete: Restrict)
 
   @@index([ticketId])
+  @@index([status])
   @@map("payments")
 }
