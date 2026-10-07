@@ -1,9 +1,4 @@
-import {
-  BadRequestException,
-  Injectable,
-  Logger,
-  NotFoundException,
-} from '@nestjs/common';
+import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { DeviceType, PaginatedResponse, Priority, TicketStatus } from '@repair-shop/shared';
 import { CustomersService } from '../customers/customers.service';
@@ -134,9 +129,7 @@ export class TicketsService {
       ...(dto.estimatedCost !== undefined && { estimatedCost: dto.estimatedCost ?? null }),
       ...(dto.finalCost !== undefined && { finalCost: dto.finalCost ?? null }),
       ...(dto.expectedCompletionAt !== undefined && {
-        expectedCompletionAt: dto.expectedCompletionAt
-          ? new Date(dto.expectedCompletionAt)
-          : null,
+        expectedCompletionAt: dto.expectedCompletionAt ? new Date(dto.expectedCompletionAt) : null,
       }),
     };
 
@@ -153,9 +146,7 @@ export class TicketsService {
 
     const allowed = ALLOWED_TRANSITIONS[ticket.status];
     if (!allowed.includes(dto.status)) {
-      throw new BadRequestException(
-        `Cannot transition from ${ticket.status} to ${dto.status}`,
-      );
+      throw new BadRequestException(`Cannot transition from ${ticket.status} to ${dto.status}`);
     }
 
     const completedAt = [TicketStatus.DELIVERED, TicketStatus.CANCELLED].includes(dto.status)
@@ -181,10 +172,7 @@ export class TicketsService {
     return this.findOne(id);
   }
 
-  async assignTechnician(
-    id: string,
-    dto: AssignTechnicianDto,
-  ): Promise<TicketResponseDto> {
+  async assignTechnician(id: string, dto: AssignTechnicianDto): Promise<TicketResponseDto> {
     await this.findOne(id);
 
     if (dto.assignedToId) {
@@ -222,16 +210,14 @@ export class TicketsService {
       },
       assignedTo: ticket.assignedTo,
       createdBy: ticket.createdBy,
-      statusHistory: ticket.statusHistory.map(
-        (h): StatusHistoryItemDto => ({
-          id: h.id,
-          fromStatus: h.fromStatus as TicketStatus | null,
-          toStatus: h.toStatus as TicketStatus,
-          notes: h.notes,
-          changedBy: h.changedBy,
-          changedAt: h.changedAt,
-        }),
-      ),
+      statusHistory: ticket.statusHistory.map((h): StatusHistoryItemDto => ({
+        id: h.id,
+        fromStatus: h.fromStatus as TicketStatus | null,
+        toStatus: h.toStatus as TicketStatus,
+        notes: h.notes,
+        changedBy: h.changedBy,
+        changedAt: h.changedAt,
+      })),
       createdAt: ticket.createdAt,
       updatedAt: ticket.updatedAt,
     };

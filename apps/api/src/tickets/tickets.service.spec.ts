@@ -10,7 +10,13 @@ import { TicketsService } from './tickets.service';
 const now = new Date();
 
 const mockCustomer = { id: 'cust-1', name: 'John Smith', phone: '+15551234567' };
-const mockDevice = { id: 'dev-1', customerId: 'cust-1', brand: 'Apple', model: 'iPhone', type: 'PHONE' };
+const mockDevice = {
+  id: 'dev-1',
+  customerId: 'cust-1',
+  brand: 'Apple',
+  model: 'iPhone',
+  type: 'PHONE',
+};
 const mockUser = { id: 'user-1', name: 'Tech One', email: 'tech@shop.com' };
 
 const mockTicketRaw = {
@@ -224,7 +230,10 @@ describe('TicketsService', () => {
   describe('update', () => {
     it('updates provided fields and returns updated ticket', async () => {
       prisma.repairTicket.findUnique.mockResolvedValue(mockTicketRaw);
-      prisma.repairTicket.update.mockResolvedValue({ ...mockTicketRaw, diagnosis: 'Battery issue' });
+      prisma.repairTicket.update.mockResolvedValue({
+        ...mockTicketRaw,
+        diagnosis: 'Battery issue',
+      });
 
       const result = await service.update('ticket-1', { diagnosis: 'Battery issue' });
 
@@ -246,13 +255,12 @@ describe('TicketsService', () => {
   describe('updateStatus', () => {
     it('updates status on a valid transition RECEIVED → DIAGNOSING', async () => {
       prisma.repairTicket.findUnique.mockResolvedValue(mockTicketRaw);
-      prisma.repairTicket.update.mockResolvedValue({ ...mockTicketRaw, status: TicketStatus.DIAGNOSING });
+      prisma.repairTicket.update.mockResolvedValue({
+        ...mockTicketRaw,
+        status: TicketStatus.DIAGNOSING,
+      });
 
-      await service.updateStatus(
-        'ticket-1',
-        { status: TicketStatus.DIAGNOSING },
-        'user-1',
-      );
+      await service.updateStatus('ticket-1', { status: TicketStatus.DIAGNOSING }, 'user-1');
 
       expect(prisma.repairTicket.update).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -280,11 +288,7 @@ describe('TicketsService', () => {
         status: TicketStatus.DELIVERED,
       });
 
-      await service.updateStatus(
-        'ticket-1',
-        { status: TicketStatus.DELIVERED },
-        'user-1',
-      );
+      await service.updateStatus('ticket-1', { status: TicketStatus.DELIVERED }, 'user-1');
 
       const updateCall = prisma.repairTicket.update.mock.calls[0]![0]!;
       expect(updateCall.data).toMatchObject({
@@ -300,11 +304,7 @@ describe('TicketsService', () => {
         status: TicketStatus.CANCELLED,
       });
 
-      await service.updateStatus(
-        'ticket-1',
-        { status: TicketStatus.CANCELLED },
-        'user-1',
-      );
+      await service.updateStatus('ticket-1', { status: TicketStatus.CANCELLED }, 'user-1');
 
       const updateCall = prisma.repairTicket.update.mock.calls[0]![0]!;
       expect(updateCall.data).toMatchObject({
@@ -357,9 +357,7 @@ describe('TicketsService', () => {
     it('throws NotFoundException when ticket does not exist', async () => {
       prisma.repairTicket.findUnique.mockResolvedValue(null);
 
-      await expect(service.assignTechnician('nonexistent', {})).rejects.toThrow(
-        NotFoundException,
-      );
+      await expect(service.assignTechnician('nonexistent', {})).rejects.toThrow(NotFoundException);
     });
   });
 });

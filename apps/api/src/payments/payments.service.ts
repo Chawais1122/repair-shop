@@ -1,8 +1,4 @@
-import {
-  BadRequestException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { Payment, Prisma } from '@prisma/client';
 import { PaymentMethod, PaymentStatus } from '@repair-shop/shared';
 import { PrismaService } from '../prisma/prisma.service';
@@ -33,8 +29,7 @@ export class PaymentsService {
       .reduce((sum, p) => sum.plus(p.amount), new Prisma.Decimal(0));
 
     const remaining = totalCost ? totalCost.minus(paidAmount) : null;
-    const isFullyPaid =
-      remaining !== null && remaining.lessThanOrEqualTo(new Prisma.Decimal(0));
+    const isFullyPaid = remaining !== null && remaining.lessThanOrEqualTo(new Prisma.Decimal(0));
 
     return {
       totalCost: totalCost ? totalCost.toString() : null,
@@ -97,8 +92,7 @@ export class PaymentsService {
     if (!payment) throw new NotFoundException(`Payment ${id} not found`);
 
     const paidAt =
-      dto.status === PaymentStatus.COMPLETED &&
-      payment.status !== PaymentStatus.COMPLETED
+      dto.status === PaymentStatus.COMPLETED && payment.status !== PaymentStatus.COMPLETED
         ? new Date()
         : undefined;
 

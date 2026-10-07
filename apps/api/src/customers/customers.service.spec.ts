@@ -46,10 +46,7 @@ describe('CustomersService', () => {
     };
 
     const module: TestingModule = await Test.createTestingModule({
-      providers: [
-        CustomersService,
-        { provide: PrismaService, useValue: prisma },
-      ],
+      providers: [CustomersService, { provide: PrismaService, useValue: prisma }],
     }).compile();
 
     service = module.get(CustomersService);
@@ -126,9 +123,9 @@ describe('CustomersService', () => {
     it('throws ConflictException when phone already exists', async () => {
       prisma.customer.findUnique.mockResolvedValue(mockCustomer);
 
-      await expect(
-        service.create({ name: 'Other', phone: '+15551234567' }),
-      ).rejects.toThrow(ConflictException);
+      await expect(service.create({ name: 'Other', phone: '+15551234567' })).rejects.toThrow(
+        ConflictException,
+      );
     });
   });
 
@@ -153,9 +150,9 @@ describe('CustomersService', () => {
       prisma.customer.findUnique.mockResolvedValue(mockCustomer);
       prisma.customer.findFirst.mockResolvedValue({ ...mockCustomer, id: 'cust-2' });
 
-      await expect(
-        service.update('cust-1', { phone: '+15559999999' }),
-      ).rejects.toThrow(ConflictException);
+      await expect(service.update('cust-1', { phone: '+15559999999' })).rejects.toThrow(
+        ConflictException,
+      );
     });
   });
 

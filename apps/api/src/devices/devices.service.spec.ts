@@ -23,7 +23,16 @@ const mockDevice = {
   updatedAt: now,
 };
 
-const mockCustomer = { id: 'cust-1', name: 'John', phone: '+1555', email: null, address: null, notes: null, createdAt: now, updatedAt: now };
+const mockCustomer = {
+  id: 'cust-1',
+  name: 'John',
+  phone: '+1555',
+  email: null,
+  address: null,
+  notes: null,
+  createdAt: now,
+  updatedAt: now,
+};
 
 describe('DevicesService', () => {
   let service: DevicesService;
@@ -194,7 +203,9 @@ describe('DevicesService', () => {
     it('throws NotFoundException when device does not exist', async () => {
       prisma.device.findUnique.mockResolvedValue(null);
 
-      await expect(service.update('nonexistent', { brand: 'X' })).rejects.toThrow(NotFoundException);
+      await expect(service.update('nonexistent', { brand: 'X' })).rejects.toThrow(
+        NotFoundException,
+      );
     });
 
     it('encrypts the new passcode on update', async () => {

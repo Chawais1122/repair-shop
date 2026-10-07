@@ -88,13 +88,8 @@ export class CustomersService {
     try {
       await this.prisma.customer.delete({ where: { id } });
     } catch (err) {
-      if (
-        err instanceof Prisma.PrismaClientKnownRequestError &&
-        err.code === 'P2003'
-      ) {
-        throw new BadRequestException(
-          'Cannot delete a customer who has existing repair tickets',
-        );
+      if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2003') {
+        throw new BadRequestException('Cannot delete a customer who has existing repair tickets');
       }
       this.logger.error('Failed to delete customer', { id, err });
       throw err;

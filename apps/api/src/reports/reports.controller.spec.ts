@@ -7,9 +7,10 @@ import { TicketStatus } from '@repair-shop/shared';
 const mockDashboard: DashboardResponseDto = {
   totalCustomers: 5,
   totalTickets: 10,
-  ticketsByStatus: Object.fromEntries(
-    Object.values(TicketStatus).map((s) => [s, 0]),
-  ) as Record<TicketStatus, number>,
+  ticketsByStatus: Object.fromEntries(Object.values(TicketStatus).map((s) => [s, 0])) as Record<
+    TicketStatus,
+    number
+  >,
   totalRevenue: '500.00',
   outstandingBalance: '120.00',
   recentTickets: [],

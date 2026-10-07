@@ -66,7 +66,7 @@ describe('PaymentSection', () => {
 
   it('shows "No payments recorded" when there are none', () => {
     renderWith(emptySummary);
-    expect(screen.getByText('No payments recorded.')).toBeInTheDocument();
+    expect(screen.getByText('No payments recorded yet.')).toBeInTheDocument();
   });
 
   it('renders payment summary totals', () => {
@@ -76,16 +76,16 @@ describe('PaymentSection', () => {
     expect(screen.getByText('Outstanding')).toBeInTheDocument();
   });
 
-  it('shows "Paid in Full" badge when fully paid', () => {
+  it('shows "Paid in full" badge when fully paid', () => {
     renderWith(paidSummary);
-    expect(screen.getByText('Paid in Full')).toBeInTheDocument();
+    expect(screen.getByText('Paid in full')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /add payment/i })).not.toBeInTheDocument();
   });
 
   it('shows existing payment entries', () => {
     renderWith(partialSummary);
     expect(screen.getByText('Cash')).toBeInTheDocument();
-    expect(screen.getByText('completed')).toBeInTheDocument();
+    expect(screen.getByText('Completed')).toBeInTheDocument();
   });
 
   it('toggles the add payment form', async () => {
@@ -94,10 +94,10 @@ describe('PaymentSection', () => {
 
     const addBtn = screen.getByRole('button', { name: /add payment/i });
     await user.click(addBtn);
-    expect(screen.getByText('New Payment')).toBeInTheDocument();
+    expect(screen.getByText('New payment')).toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: /cancel/i }));
-    expect(screen.queryByText('New Payment')).not.toBeInTheDocument();
+    expect(screen.queryByText('New payment')).not.toBeInTheDocument();
   });
 
   it('submits a new payment and refreshes the summary', async () => {

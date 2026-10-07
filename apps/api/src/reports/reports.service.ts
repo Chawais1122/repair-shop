@@ -51,15 +51,10 @@ export class ReportsService {
 
     const allStatuses = Object.values(TicketStatus);
     const ticketsByStatus = Object.fromEntries(
-      allStatuses.map((s) => [
-        s,
-        rawStatusCounts.find((r) => r.status === s)?._count._all ?? 0,
-      ]),
+      allStatuses.map((s) => [s, rawStatusCounts.find((r) => r.status === s)?._count._all ?? 0]),
     ) as Record<TicketStatus, number>;
 
-    const totalRevenue = (
-      revenueResult._sum.amount ?? new Prisma.Decimal(0)
-    ).toString();
+    const totalRevenue = (revenueResult._sum.amount ?? new Prisma.Decimal(0)).toString();
 
     let outstanding = new Prisma.Decimal(0);
     for (const ticket of ticketsWithCosts) {

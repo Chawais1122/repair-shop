@@ -1,9 +1,4 @@
-import {
-  BadRequestException,
-  Injectable,
-  Logger,
-  NotFoundException,
-} from '@nestjs/common';
+import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { DeviceType, PaginatedResponse } from '@repair-shop/shared';
 import { EncryptionService } from '../common/services/encryption.service';
@@ -70,8 +65,7 @@ export class DevicesService {
   async create(customerId: string, dto: CreateDeviceDto): Promise<DeviceResponseDto> {
     await this.customersService.findOne(customerId);
 
-    const passcode =
-      dto.passcode ? this.encryptionService.encrypt(dto.passcode) : null;
+    const passcode = dto.passcode ? this.encryptionService.encrypt(dto.passcode) : null;
 
     const device = await this.prisma.device.create({
       data: {
@@ -115,22 +109,15 @@ export class DevicesService {
     try {
       await this.prisma.device.delete({ where: { id } });
     } catch (err) {
-      if (
-        err instanceof Prisma.PrismaClientKnownRequestError &&
-        err.code === 'P2003'
-      ) {
-        throw new BadRequestException(
-          'Cannot delete a device with existing repair tickets',
-        );
+      if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2003') {
+        throw new BadRequestException('Cannot delete a device with existing repair tickets');
       }
       this.logger.error('Failed to delete device', { id, err });
       throw err;
     }
   }
 
-  private toResponseDto(
-    device: Prisma.DeviceGetPayload<Record<string, never>>,
-  ): DeviceResponseDto {
+  private toResponseDto(device: Prisma.DeviceGetPayload<Record<string, never>>): DeviceResponseDto {
     return {
       id: device.id,
       customerId: device.customerId,

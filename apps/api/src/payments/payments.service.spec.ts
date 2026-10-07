@@ -7,12 +7,14 @@ import { PaymentsService } from './payments.service';
 
 const now = new Date();
 
-function makePayment(overrides: Partial<{
-  id: string;
-  amount: Prisma.Decimal;
-  status: PaymentStatus;
-  method: PaymentMethod;
-}> = {}) {
+function makePayment(
+  overrides: Partial<{
+    id: string;
+    amount: Prisma.Decimal;
+    status: PaymentStatus;
+    method: PaymentMethod;
+  }> = {},
+) {
   return {
     id: overrides.id ?? 'pay-1',
     ticketId: 'ticket-1',
@@ -51,10 +53,7 @@ describe('PaymentsService', () => {
     };
 
     const module: TestingModule = await Test.createTestingModule({
-      providers: [
-        PaymentsService,
-        { provide: PrismaService, useValue: prisma },
-      ],
+      providers: [PaymentsService, { provide: PrismaService, useValue: prisma }],
     }).compile();
 
     service = module.get(PaymentsService);
@@ -129,8 +128,16 @@ describe('PaymentsService', () => {
         estimatedCost: null,
       });
       prisma.payment.findMany.mockResolvedValue([
-        makePayment({ id: 'p1', amount: new Prisma.Decimal('50.00'), status: PaymentStatus.PENDING }),
-        makePayment({ id: 'p2', amount: new Prisma.Decimal('30.00'), status: PaymentStatus.COMPLETED }),
+        makePayment({
+          id: 'p1',
+          amount: new Prisma.Decimal('50.00'),
+          status: PaymentStatus.PENDING,
+        }),
+        makePayment({
+          id: 'p2',
+          amount: new Prisma.Decimal('30.00'),
+          status: PaymentStatus.COMPLETED,
+        }),
       ]);
 
       const result = await service.getSummary('ticket-1');

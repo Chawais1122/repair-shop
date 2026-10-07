@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { Prisma } from '@prisma/client';
-import { PaymentStatus, TicketStatus } from '@repair-shop/shared';
+import { TicketStatus } from '@repair-shop/shared';
 import { PrismaService } from '../prisma/prisma.service';
 import { ReportsService } from './reports.service';
 
@@ -28,10 +28,7 @@ describe('ReportsService', () => {
   beforeEach(async () => {
     prisma = makePrisma();
     const module: TestingModule = await Test.createTestingModule({
-      providers: [
-        ReportsService,
-        { provide: PrismaService, useValue: prisma },
-      ],
+      providers: [ReportsService, { provide: PrismaService, useValue: prisma }],
     }).compile();
     service = module.get<ReportsService>(ReportsService);
   });
@@ -58,9 +55,7 @@ describe('ReportsService', () => {
     expect(result.ticketsByStatus[TicketStatus.RECEIVED]).toBe(2);
     expect(result.ticketsByStatus[TicketStatus.DIAGNOSING]).toBe(0);
     expect(result.ticketsByStatus[TicketStatus.CANCELLED]).toBe(0);
-    expect(Object.keys(result.ticketsByStatus)).toHaveLength(
-      Object.values(TicketStatus).length,
-    );
+    expect(Object.keys(result.ticketsByStatus)).toHaveLength(Object.values(TicketStatus).length);
   });
 
   it('calculates totalRevenue from completed payment sum', async () => {
@@ -78,7 +73,8 @@ describe('ReportsService', () => {
     defaultMocks(prisma);
     (prisma.repairTicket.findMany as jest.Mock)
       .mockResolvedValueOnce([]) // recentTickets (first findMany call)
-      .mockResolvedValueOnce([   // ticketsWithCosts (second findMany call)
+      .mockResolvedValueOnce([
+        // ticketsWithCosts (second findMany call)
         { id: 'ticket-1', finalCost: new Prisma.Decimal('100.00'), estimatedCost: null },
         { id: 'ticket-2', finalCost: new Prisma.Decimal('50.00'), estimatedCost: null },
       ]);
@@ -90,7 +86,9 @@ describe('ReportsService', () => {
     const result = await service.getDashboard();
 
     // ticket-1: 100 - 40 = 60 outstanding, ticket-2: 50 - 50 = 0
-    expect(new Prisma.Decimal(result.outstandingBalance).equals(new Prisma.Decimal('60'))).toBe(true);
+    expect(new Prisma.Decimal(result.outstandingBalance).equals(new Prisma.Decimal('60'))).toBe(
+      true,
+    );
   });
 
   it('maps recent tickets with correct fields', async () => {

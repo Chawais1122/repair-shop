@@ -48,10 +48,7 @@ export class TicketsController {
 
   @Patch(':id')
   @Roles(UserRole.ADMIN, UserRole.STAFF)
-  update(
-    @Param('id') id: string,
-    @Body() dto: UpdateTicketDto,
-  ): Promise<TicketResponseDto> {
+  update(@Param('id') id: string, @Body() dto: UpdateTicketDto): Promise<TicketResponseDto> {
     return this.ticketsService.update(id, dto);
   }
 

@@ -19,7 +19,7 @@ describe('CreateTicketForm', () => {
 
   it('renders the customer search step initially', () => {
     render(<CreateTicketForm />);
-    expect(screen.getByText('Step 1: Select Customer')).toBeInTheDocument();
+    expect(screen.getByText('Select customer')).toBeInTheDocument();
     expect(screen.getByPlaceholderText(/search by name or phone/i)).toBeInTheDocument();
   });
 
@@ -58,7 +58,7 @@ describe('CreateTicketForm', () => {
     await user.click(screen.getByText('Alice Smith'));
 
     await waitFor(() => {
-      expect(screen.getByText(/Step 2: Select Device/i)).toBeInTheDocument();
+      expect(screen.getByText(/Select device for Alice Smith/i)).toBeInTheDocument();
     });
     expect(screen.getByText('Apple iPhone 13')).toBeInTheDocument();
   });
@@ -84,7 +84,7 @@ describe('CreateTicketForm', () => {
     await user.click(screen.getByText('Apple iPhone 13'));
 
     await waitFor(() => {
-      expect(screen.getByText('Step 3: Ticket Details')).toBeInTheDocument();
+      expect(screen.getByText('Ticket details')).toBeInTheDocument();
     });
     expect(screen.getByPlaceholderText(/describe the problem/i)).toBeInTheDocument();
   });
@@ -108,7 +108,7 @@ describe('CreateTicketForm', () => {
     await user.click(screen.getByText('Alice Smith'));
     await waitFor(() => screen.getByText('Apple iPhone 13'));
     await user.click(screen.getByText('Apple iPhone 13'));
-    await waitFor(() => screen.getByText('Step 3: Ticket Details'));
+    await waitFor(() => screen.getByText('Ticket details'));
 
     await user.click(screen.getByRole('button', { name: /create ticket/i }));
 

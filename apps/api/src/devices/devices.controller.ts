@@ -1,13 +1,4 @@
-import {
-  Body,
-  Controller,
-  Delete,
-  Get,
-  HttpCode,
-  HttpStatus,
-  Param,
-  Patch,
-} from '@nestjs/common';
+import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, Patch } from '@nestjs/common';
 import { UserRole } from '@repair-shop/shared';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { DevicesService } from './devices.service';
@@ -25,10 +16,7 @@ export class DevicesController {
 
   @Patch(':id')
   @Roles(UserRole.ADMIN, UserRole.STAFF)
-  update(
-    @Param('id') id: string,
-    @Body() dto: UpdateDeviceDto,
-  ): Promise<DeviceResponseDto> {
+  update(@Param('id') id: string, @Body() dto: UpdateDeviceDto): Promise<DeviceResponseDto> {
     return this.devicesService.update(id, dto);
   }
 

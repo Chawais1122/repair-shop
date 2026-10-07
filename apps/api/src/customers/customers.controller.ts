@@ -24,9 +24,7 @@ export class CustomersController {
   constructor(private readonly customersService: CustomersService) {}
 
   @Get()
-  findAll(
-    @Query() query: FindCustomersQueryDto,
-  ): Promise<PaginatedResponse<CustomerResponseDto>> {
+  findAll(@Query() query: FindCustomersQueryDto): Promise<PaginatedResponse<CustomerResponseDto>> {
     return this.customersService.findAll(query);
   }
 
@@ -44,10 +42,7 @@ export class CustomersController {
 
   @Patch(':id')
   @Roles(UserRole.ADMIN, UserRole.STAFF)
-  update(
-    @Param('id') id: string,
-    @Body() dto: UpdateCustomerDto,
-  ): Promise<CustomerResponseDto> {
+  update(@Param('id') id: string, @Body() dto: UpdateCustomerDto): Promise<CustomerResponseDto> {
     return this.customersService.update(id, dto);
   }
 

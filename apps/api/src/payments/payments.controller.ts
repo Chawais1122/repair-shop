@@ -11,10 +11,7 @@ export class PaymentsController {
 
   @Patch(':id')
   @Roles(UserRole.ADMIN, UserRole.STAFF)
-  update(
-    @Param('id') id: string,
-    @Body() dto: UpdatePaymentDto,
-  ): Promise<PaymentResponseDto> {
+  update(@Param('id') id: string, @Body() dto: UpdatePaymentDto): Promise<PaymentResponseDto> {
     return this.paymentsService.update(id, dto);
   }
 }
