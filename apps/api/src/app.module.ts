@@ -10,6 +10,7 @@ import { CustomersModule } from './customers/customers.module';
 import { DevicesModule } from './devices/devices.module';
 import { TicketsModule } from './tickets/tickets.module';
 import { PaymentsModule } from './payments/payments.module';
+import { ReportsModule } from './reports/reports.module';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import { TransformInterceptor } from './common/interceptors/transform.interceptor';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
@@ -26,6 +27,7 @@ import { RolesGuard } from './auth/guards/roles.guard';
     DevicesModule,
     TicketsModule,
     PaymentsModule,
+    ReportsModule,
   ],
   providers: [
     {

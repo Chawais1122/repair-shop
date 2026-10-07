@@ -31,7 +31,7 @@ export function LoginForm() {
         method: 'POST',
         body: JSON.stringify(values),
       });
-      router.push('/customers');
+      router.push('/dashboard');
     } catch (err) {
       setServerError(
         err instanceof ApiError && err.status === 401
