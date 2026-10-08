@@ -12,6 +12,7 @@ import {
   LayoutDashboard,
   LogOut,
   Menu,
+  MessagesSquare,
   Package,
   ReceiptText,
   ShoppingCart,
@@ -27,6 +28,7 @@ import { Separator } from '@/components/ui/separator';
 import { Sheet, SheetContent, SheetDescription, SheetTitle } from '@/components/ui/sheet';
 import { cn } from '@/lib/utils';
 import { ClockWidget } from './clock-widget';
+import { ChatUnreadBadge } from './chat/chat-unread-badge';
 
 interface NavItem {
   href: string;
@@ -64,6 +66,7 @@ const NAV_SECTIONS: Array<{ title?: string; items: NavItem[] }> = [
     title: 'Team',
     items: [
       { href: '/team', label: 'Employees', icon: IdCard, roles: ['ADMIN'] },
+      { href: '/chat', label: 'Team chat', icon: MessagesSquare },
       { href: '/schedule', label: 'Schedule', icon: CalendarDays },
       { href: '/team/timesheets', label: 'Timesheets', icon: Clock },
     ],
@@ -150,6 +153,7 @@ export function NavSidebar({ userEmail, userRole }: Props) {
               >
                 <Icon className="size-4" aria-hidden="true" />
                 {item.label}
+                {item.href === '/chat' && <ChatUnreadBadge />}
               </Link>
             );
           })}

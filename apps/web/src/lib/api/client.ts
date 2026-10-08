@@ -56,3 +56,20 @@ export async function clientFetch<T>(path: string, init?: RequestInit): Promise<
 
   return res.json() as Promise<T>;
 }
+
+/** Multipart upload from the browser; the browser sets the multipart boundary header. */
+export async function clientUpload<T>(path: string, form: FormData): Promise<T> {
+  const res = await fetch(`${API_URL}${path}`, {
+    method: 'POST',
+    body: form,
+    credentials: 'include',
+  });
+
+  if (!res.ok) {
+    const body = (await res.json().catch(() => ({}))) as { message?: string | string[] };
+    const msg = Array.isArray(body.message) ? body.message.join(', ') : (body.message ?? 'Upload failed');
+    throw new ApiError(res.status, msg);
+  }
+
+  return res.json() as Promise<T>;
+}

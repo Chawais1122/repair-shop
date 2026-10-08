@@ -18,6 +18,7 @@ import { InvoicesModule } from './invoices/invoices.module';
 import { UsersModule } from './users/users.module';
 import { TimeClockModule } from './time-clock/time-clock.module';
 import { SchedulingModule } from './scheduling/scheduling.module';
+import { ChatModule } from './chat/chat.module';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import { TransformInterceptor } from './common/interceptors/transform.interceptor';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
@@ -42,6 +43,7 @@ import { RolesGuard } from './auth/guards/roles.guard';
     UsersModule,
     TimeClockModule,
     SchedulingModule,
+    ChatModule,
   ],
   providers: [
     {

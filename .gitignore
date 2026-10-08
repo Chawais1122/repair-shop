@@ -38,3 +38,7 @@ coverage/
 
 # TypeScript
 *.tsbuildinfo
+
+# Uploaded files (team chat photos)
+apps/api/uploads/
+uploads/
