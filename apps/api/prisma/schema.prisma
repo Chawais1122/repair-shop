@@ -62,6 +62,13 @@ enum InvoiceStatus {
   VOID
 }
 
+enum TimeOffStatus {
+  PENDING
+  APPROVED
+  DENIED
+  CANCELLED
+}
+
 enum PurchaseOrderStatus {
   DRAFT
   ORDERED
@@ -106,6 +113,10 @@ model User {
   voidedInvoices    Invoice[]             @relation("InvoiceVoidedBy")
   timeEntries       TimeEntry[]           @relation("TimeEntryUser")
   editedTimeEntries TimeEntry[]           @relation("TimeEntryEditedBy")
+  shifts            Shift[]               @relation("ShiftUser")
+  createdShifts     Shift[]               @relation("ShiftCreatedBy")
+  timeOffRequests   TimeOffRequest[]      @relation("TimeOffUser")
+  reviewedTimeOff   TimeOffRequest[]      @relation("TimeOffReviewer")
 
   @@index([email])
   @@index([role])
@@ -464,4 +475,46 @@ model TimeEntry {
   @@index([userId])
   @@index([clockIn])
   @@map("time_entries")
+}
+
+// A planned shift on the weekly schedule (what the time clock records is TimeEntry).
+model Shift {
+  id          String   @id @default(cuid())
+  userId      String
+  startsAt    DateTime
+  endsAt      DateTime
+  notes       String?
+  createdById String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user      User @relation("ShiftUser", fields: [userId], references: [id], onDelete: Cascade)
+  createdBy User @relation("ShiftCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
+
+  @@index([userId])
+  @@index([startsAt])
+  @@map("shifts")
+}
+
+// Whole-day time off; startDate and endDate are inclusive calendar days.
+model TimeOffRequest {
+  id           String        @id @default(cuid())
+  userId       String
+  startDate    DateTime      @db.Date
+  endDate      DateTime      @db.Date
+  reason       String?
+  status       TimeOffStatus @default(PENDING)
+  reviewedById String?
+  reviewedAt   DateTime?
+  reviewNote   String?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  user       User  @relation("TimeOffUser", fields: [userId], references: [id], onDelete: Cascade)
+  reviewedBy User? @relation("TimeOffReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([status])
+  @@index([startDate, endDate])
+  @@map("time_off_requests")
 }

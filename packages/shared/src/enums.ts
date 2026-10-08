@@ -65,3 +65,10 @@ export enum InvoiceStatus {
   PAID = 'PAID',
   VOID = 'VOID',
 }
+
+export enum TimeOffStatus {
+  PENDING = 'PENDING',
+  APPROVED = 'APPROVED',
+  DENIED = 'DENIED',
+  CANCELLED = 'CANCELLED',
+}
