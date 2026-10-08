@@ -5,6 +5,7 @@ import { getTickets } from '@/lib/api/tickets';
 import { TicketStatusBadge } from '@/components/shared/ticket-status-badge';
 import { PageHeader } from '@/components/shared/page-header';
 import { EmptyState } from '@/components/shared/empty-state';
+import { TicketsViewToggle } from './components/tickets-view-toggle';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -81,12 +82,15 @@ export default async function TicketsPage({ searchParams }: PageProps) {
       <PageHeader
         title="Tickets"
         actions={
-          <Button asChild>
-            <Link href="/tickets/new">
-              <Plus />
-              New ticket
-            </Link>
-          </Button>
+          <>
+            <TicketsViewToggle active="list" />
+            <Button asChild>
+              <Link href="/tickets/new">
+                <Plus />
+                New ticket
+              </Link>
+            </Button>
+          </>
         }
       />
 

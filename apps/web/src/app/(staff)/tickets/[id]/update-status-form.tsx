@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { AlertCircle, Loader2 } from 'lucide-react';
-import { TicketStatus } from '@repair-shop/shared';
+import { ALLOWED_TICKET_TRANSITIONS, TicketStatus } from '@repair-shop/shared';
 import { clientFetch } from '@/lib/api/client';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
@@ -17,21 +17,6 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-
-const ALLOWED_TRANSITIONS: Record<TicketStatus, TicketStatus[]> = {
-  [TicketStatus.RECEIVED]: [TicketStatus.DIAGNOSING, TicketStatus.CANCELLED],
-  [TicketStatus.DIAGNOSING]: [
-    TicketStatus.WAITING_APPROVAL,
-    TicketStatus.REPAIRING,
-    TicketStatus.CANCELLED,
-  ],
-  [TicketStatus.WAITING_APPROVAL]: [TicketStatus.APPROVED, TicketStatus.CANCELLED],
-  [TicketStatus.APPROVED]: [TicketStatus.REPAIRING, TicketStatus.CANCELLED],
-  [TicketStatus.REPAIRING]: [TicketStatus.READY, TicketStatus.CANCELLED],
-  [TicketStatus.READY]: [TicketStatus.DELIVERED, TicketStatus.CANCELLED],
-  [TicketStatus.DELIVERED]: [],
-  [TicketStatus.CANCELLED]: [],
-};
 
 const STATUS_LABELS: Record<TicketStatus, string> = {
   [TicketStatus.RECEIVED]: 'Received',
@@ -56,7 +41,7 @@ export function UpdateStatusForm({ ticketId, currentStatus }: Props) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const options = ALLOWED_TRANSITIONS[currentStatus];
+  const options = ALLOWED_TICKET_TRANSITIONS[currentStatus];
 
   if (options.length === 0) return null;
 

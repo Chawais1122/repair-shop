@@ -2,7 +2,7 @@ import { TicketStatus } from '@repair-shop/shared';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 
-const STATUS_LABELS: Record<TicketStatus, string> = {
+export const TICKET_STATUS_LABELS: Record<TicketStatus, string> = {
   [TicketStatus.RECEIVED]: 'Received',
   [TicketStatus.DIAGNOSING]: 'Diagnosing',
   [TicketStatus.WAITING_APPROVAL]: 'Waiting Approval',
@@ -34,7 +34,7 @@ export function TicketStatusBadge({ status }: TicketStatusBadgeProps) {
       variant="secondary"
       className={cn('whitespace-nowrap font-medium shadow-none', STATUS_COLORS[status])}
     >
-      {STATUS_LABELS[status]}
+      {TICKET_STATUS_LABELS[status]}
     </Badge>
   );
 }
