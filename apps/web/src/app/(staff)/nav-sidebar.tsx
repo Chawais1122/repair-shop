@@ -5,6 +5,8 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useState } from 'react';
 import {
   ClipboardList,
+  Clock,
+  IdCard,
   LayoutDashboard,
   LogOut,
   Menu,
@@ -22,11 +24,14 @@ import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Sheet, SheetContent, SheetDescription, SheetTitle } from '@/components/ui/sheet';
 import { cn } from '@/lib/utils';
+import { ClockWidget } from './clock-widget';
 
 interface NavItem {
   href: string;
   label: string;
   icon: LucideIcon;
+  /** Restrict to these roles; visible to everyone when omitted. */
+  roles?: string[];
 }
 
 const NAV_SECTIONS: Array<{ title?: string; items: NavItem[] }> = [
@@ -52,15 +57,27 @@ const NAV_SECTIONS: Array<{ title?: string; items: NavItem[] }> = [
       { href: '/inventory/suppliers', label: 'Suppliers', icon: Truck },
     ],
   },
+  {
+    title: 'Team',
+    items: [
+      { href: '/team', label: 'Employees', icon: IdCard, roles: ['ADMIN'] },
+      { href: '/team/timesheets', label: 'Timesheets', icon: Clock },
+    ],
+  },
 ];
 
-const ALL_HREFS = NAV_SECTIONS.flatMap((s) => s.items.map((i) => i.href));
+function visibleSections(role: string): Array<{ title?: string; items: NavItem[] }> {
+  return NAV_SECTIONS.map((s) => ({
+    ...s,
+    items: s.items.filter((i) => !i.roles || i.roles.includes(role)),
+  })).filter((s) => s.items.length > 0);
+}
 
 /** The most specific nav entry that prefixes the path, so /inventory/suppliers doesn't light up /inventory. */
-function activeHref(pathname: string): string | undefined {
-  return ALL_HREFS.filter((href) => pathname === href || pathname.startsWith(`${href}/`)).sort(
-    (a, b) => b.length - a.length,
-  )[0];
+function activeHref(pathname: string, hrefs: string[]): string | undefined {
+  return hrefs
+    .filter((href) => pathname === href || pathname.startsWith(`${href}/`))
+    .sort((a, b) => b.length - a.length)[0];
 }
 
 interface Props {
@@ -96,11 +113,15 @@ export function NavSidebar({ userEmail, userRole }: Props) {
     router.refresh();
   };
 
-  const current = activeHref(pathname);
+  const sections = visibleSections(userRole);
+  const current = activeHref(
+    pathname,
+    sections.flatMap((s) => s.items.map((i) => i.href)),
+  );
 
   const links = (
     <nav className="flex-1 space-y-5 overflow-y-auto px-3 py-2" aria-label="Main navigation">
-      {NAV_SECTIONS.map((section, idx) => (
+      {sections.map((section, idx) => (
         <div key={section.title ?? idx} className="space-y-1">
           {section.title && (
             <p className="px-3 pb-1 text-xs font-medium uppercase tracking-wider text-muted-foreground">
@@ -136,6 +157,9 @@ export function NavSidebar({ userEmail, userRole }: Props) {
   const footer = (
     <div className="px-3 pb-4">
       <Separator className="mb-3 bg-sidebar-border" />
+      <div className="mb-3">
+        <ClockWidget />
+      </div>
       <div className="px-3">
         <p className="truncate text-sm font-medium">{userEmail}</p>
         <p className="text-xs capitalize text-muted-foreground">{userRole.toLowerCase()}</p>

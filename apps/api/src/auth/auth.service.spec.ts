@@ -15,6 +15,9 @@ const mockUser = {
   role: 'ADMIN' as const,
   isActive: true,
   passwordHash: bcrypt.hashSync(PASSWORD, 10),
+  phone: null,
+  hourlyRate: null,
+  monthlySalesTarget: null,
   createdAt: new Date(),
   updatedAt: new Date(),
 };

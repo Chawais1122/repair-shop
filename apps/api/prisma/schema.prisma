@@ -81,24 +81,31 @@ enum StockMovementReason {
 // ─── Models ───────────────────────────────────────────────────────────────────
 
 model User {
-  id           String   @id @default(cuid())
-  email        String   @unique
-  passwordHash String
-  name         String
-  role         UserRole @default(STAFF)
-  isActive     Boolean  @default(true)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id                 String   @id @default(cuid())
+  email              String   @unique
+  passwordHash       String
+  name               String
+  role               UserRole @default(STAFF)
+  isActive           Boolean  @default(true)
+  phone              String?
+  // Used for labor cost and revenue-per-hour metrics.
+  hourlyRate         Decimal? @db.Decimal(10, 2)
+  // Monthly sales goal shown on the staff performance report.
+  monthlySalesTarget Decimal? @db.Decimal(10, 2)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
 
-  assignedTickets RepairTicket[]        @relation("AssignedTo")
-  createdTickets  RepairTicket[]        @relation("CreatedBy")
-  statusChanges   TicketStatusHistory[]
-  repairNotes     RepairNote[]
-  ticketItems     TicketItem[]
-  purchaseOrders  PurchaseOrder[]
-  stockMovements  StockMovement[]
-  invoices        Invoice[]             @relation("InvoiceCreatedBy")
-  voidedInvoices  Invoice[]             @relation("InvoiceVoidedBy")
+  assignedTickets   RepairTicket[]        @relation("AssignedTo")
+  createdTickets    RepairTicket[]        @relation("CreatedBy")
+  statusChanges     TicketStatusHistory[]
+  repairNotes       RepairNote[]
+  ticketItems       TicketItem[]
+  purchaseOrders    PurchaseOrder[]
+  stockMovements    StockMovement[]
+  invoices          Invoice[]             @relation("InvoiceCreatedBy")
+  voidedInvoices    Invoice[]             @relation("InvoiceVoidedBy")
+  timeEntries       TimeEntry[]           @relation("TimeEntryUser")
+  editedTimeEntries TimeEntry[]           @relation("TimeEntryEditedBy")
 
   @@index([email])
   @@index([role])
@@ -434,4 +441,27 @@ model InvoiceItem {
   @@index([invoiceId])
   @@index([partId])
   @@map("invoice_items")
+}
+
+// ─── Team ─────────────────────────────────────────────────────────────────────
+
+// One row per shift worked. clockOut is null while the employee is clocked in;
+// a partial unique index (see migration) allows at most one open entry per user.
+model TimeEntry {
+  id         String    @id @default(cuid())
+  userId     String
+  clockIn    DateTime
+  clockOut   DateTime?
+  notes      String?
+  // Set when an admin corrects the entry.
+  editedById String?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  user     User  @relation("TimeEntryUser", fields: [userId], references: [id], onDelete: Cascade)
+  editedBy User? @relation("TimeEntryEditedBy", fields: [editedById], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([clockIn])
+  @@map("time_entries")
 }
