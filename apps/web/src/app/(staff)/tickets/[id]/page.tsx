@@ -1,20 +1,25 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import { Pencil } from 'lucide-react';
 import { getTicket, getTechnicians } from '@/lib/api/tickets';
 import { getPaymentSummary } from '@/lib/api/payments';
+import { ApiError } from '@/lib/api/client';
 import { TicketStatusBadge } from '@/components/shared/ticket-status-badge';
 import { PaymentSection } from '@/components/shared/payment-section';
+import { PageBreadcrumb } from '@/components/shared/page-breadcrumb';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { cn } from '@/lib/utils';
 import { StatusTimeline } from './status-timeline';
 import { UpdateStatusForm } from './update-status-form';
 import { AssignTechnicianForm } from './assign-technician-form';
-import { ApiError } from '@/lib/api/client';
 
 interface PageProps {
   params: Promise<{ id: string }>;
 }
 
 const PRIORITY_STYLES: Record<string, string> = {
-  LOW: 'text-gray-500',
+  LOW: 'text-muted-foreground',
   NORMAL: 'text-blue-600',
   HIGH: 'text-orange-600',
   URGENT: 'text-red-600 font-semibold',
@@ -40,129 +45,133 @@ export default async function TicketDetailPage({ params }: PageProps) {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <nav className="mb-2 flex items-center gap-1.5 text-sm text-gray-500" aria-label="Breadcrumb">
-          <Link href="/tickets" className="hover:text-indigo-600">
-            Tickets
-          </Link>
-          <span aria-hidden="true">/</span>
-          <span className="text-gray-900">{ticket.ticketNumber}</span>
-        </nav>
+        <PageBreadcrumb
+          className="mb-2"
+          items={[{ label: 'Tickets', href: '/tickets' }, { label: ticket.ticketNumber }]}
+        />
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-semibold text-gray-900">{ticket.ticketNumber}</h1>
+            <h1 className="text-2xl font-semibold tracking-tight">{ticket.ticketNumber}</h1>
             <TicketStatusBadge status={ticket.status} />
           </div>
-          <Link
-            href={`/tickets/${id}/edit`}
-            className="inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-300"
-          >
-            Edit ticket
-          </Link>
+          <Button asChild variant="outline">
+            <Link href={`/tickets/${id}/edit`}>
+              <Pencil />
+              Edit ticket
+            </Link>
+          </Button>
         </div>
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         {/* Main column */}
         <div className="space-y-6 lg:col-span-2">
-          <section className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm">
-            <h2 className="mb-4 text-base font-semibold text-gray-900">Ticket Details</h2>
-            <dl className="grid grid-cols-2 gap-x-6 gap-y-4 text-sm">
-              <div>
-                <dt className="text-gray-500">Priority</dt>
-                <dd className={`mt-0.5 capitalize ${PRIORITY_STYLES[ticket.priority] ?? 'text-gray-900'}`}>
-                  {ticket.priority.toLowerCase()}
-                </dd>
-              </div>
-              <div>
-                <dt className="text-gray-500">Received</dt>
-                <dd className="mt-0.5 text-gray-900">
-                  {new Date(ticket.receivedAt).toLocaleDateString()}
-                </dd>
-              </div>
-              {ticket.expectedCompletionAt && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Ticket Details</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <dl className="grid grid-cols-2 gap-x-6 gap-y-4 text-sm">
                 <div>
-                  <dt className="text-gray-500">Expected by</dt>
-                  <dd className="mt-0.5 text-gray-900">
-                    {new Date(ticket.expectedCompletionAt).toLocaleDateString()}
+                  <dt className="text-muted-foreground">Priority</dt>
+                  <dd className={cn('mt-0.5 capitalize', PRIORITY_STYLES[ticket.priority])}>
+                    {ticket.priority.toLowerCase()}
                   </dd>
                 </div>
-              )}
-              {ticket.completedAt && (
                 <div>
-                  <dt className="text-gray-500">Completed</dt>
-                  <dd className="mt-0.5 text-gray-900">
-                    {new Date(ticket.completedAt).toLocaleDateString()}
-                  </dd>
+                  <dt className="text-muted-foreground">Received</dt>
+                  <dd className="mt-0.5">{new Date(ticket.receivedAt).toLocaleDateString()}</dd>
                 </div>
-              )}
-              <div className="col-span-2">
-                <dt className="text-gray-500">Problem reported</dt>
-                <dd className="mt-1 whitespace-pre-wrap text-gray-900">{ticket.reportedProblem}</dd>
-              </div>
-              {ticket.diagnosis && (
+                {ticket.expectedCompletionAt && (
+                  <div>
+                    <dt className="text-muted-foreground">Expected by</dt>
+                    <dd className="mt-0.5">
+                      {new Date(ticket.expectedCompletionAt).toLocaleDateString()}
+                    </dd>
+                  </div>
+                )}
+                {ticket.completedAt && (
+                  <div>
+                    <dt className="text-muted-foreground">Completed</dt>
+                    <dd className="mt-0.5">
+                      {new Date(ticket.completedAt).toLocaleDateString()}
+                    </dd>
+                  </div>
+                )}
                 <div className="col-span-2">
-                  <dt className="text-gray-500">Diagnosis</dt>
-                  <dd className="mt-1 whitespace-pre-wrap text-gray-900">{ticket.diagnosis}</dd>
+                  <dt className="text-muted-foreground">Problem reported</dt>
+                  <dd className="mt-1 whitespace-pre-wrap">{ticket.reportedProblem}</dd>
                 </div>
-              )}
-              {ticket.estimatedCost !== null && (
-                <div>
-                  <dt className="text-gray-500">Estimate</dt>
-                  <dd className="mt-0.5 font-medium text-gray-900">${ticket.estimatedCost}</dd>
-                </div>
-              )}
-              {ticket.finalCost !== null && (
-                <div>
-                  <dt className="text-gray-500">Final cost</dt>
-                  <dd className="mt-0.5 font-medium text-gray-900">${ticket.finalCost}</dd>
-                </div>
-              )}
-            </dl>
-          </section>
+                {ticket.diagnosis && (
+                  <div className="col-span-2">
+                    <dt className="text-muted-foreground">Diagnosis</dt>
+                    <dd className="mt-1 whitespace-pre-wrap">{ticket.diagnosis}</dd>
+                  </div>
+                )}
+                {ticket.estimatedCost !== null && (
+                  <div>
+                    <dt className="text-muted-foreground">Estimate</dt>
+                    <dd className="mt-0.5 font-medium">${ticket.estimatedCost}</dd>
+                  </div>
+                )}
+                {ticket.finalCost !== null && (
+                  <div>
+                    <dt className="text-muted-foreground">Final cost</dt>
+                    <dd className="mt-0.5 font-medium">${ticket.finalCost}</dd>
+                  </div>
+                )}
+              </dl>
+            </CardContent>
+          </Card>
 
-          <section className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm">
-            <StatusTimeline history={ticket.statusHistory} />
-          </section>
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Status History</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <StatusTimeline history={ticket.statusHistory} />
+            </CardContent>
+          </Card>
         </div>
 
         {/* Sidebar column */}
         <div className="space-y-4">
-          <section className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm">
-            <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-gray-500">
-              Customer
-            </h2>
-            <Link
-              href={`/customers/${ticket.customer.id}`}
-              className="text-sm font-medium text-indigo-600 hover:text-indigo-800"
-            >
-              {ticket.customer.name}
-            </Link>
-            <p className="mt-0.5 text-sm text-gray-500">{ticket.customer.phone}</p>
-          </section>
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base">Customer</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Link
+                href={`/customers/${ticket.customer.id}`}
+                className="text-sm font-medium underline-offset-4 hover:underline"
+              >
+                {ticket.customer.name}
+              </Link>
+              <p className="mt-0.5 text-sm text-muted-foreground">{ticket.customer.phone}</p>
+            </CardContent>
+          </Card>
 
-          <section className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm">
-            <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-gray-500">
-              Device
-            </h2>
-            <p className="text-sm font-medium text-gray-900">
-              {ticket.device.brand} {ticket.device.model}
-            </p>
-            <p className="mt-0.5 text-sm capitalize text-gray-500">
-              {ticket.device.type.toLowerCase()}
-            </p>
-          </section>
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base">Device</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm font-medium">
+                {ticket.device.brand} {ticket.device.model}
+              </p>
+              <p className="mt-0.5 text-sm capitalize text-muted-foreground">
+                {ticket.device.type.toLowerCase()}
+              </p>
+            </CardContent>
+          </Card>
 
-          <section className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm">
-            <AssignTechnicianForm
-              ticketId={ticket.id}
-              currentAssignedId={ticket.assignedTo?.id ?? null}
-              technicians={technicians}
-            />
-          </section>
+          <AssignTechnicianForm
+            ticketId={ticket.id}
+            currentAssignedId={ticket.assignedTo?.id ?? null}
+            technicians={technicians}
+          />
 
-          <section className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm">
-            <UpdateStatusForm ticketId={ticket.id} currentStatus={ticket.status} />
-          </section>
+          <UpdateStatusForm ticketId={ticket.id} currentStatus={ticket.status} />
 
           <PaymentSection ticketId={ticket.id} initialSummary={paymentSummary} />
         </div>

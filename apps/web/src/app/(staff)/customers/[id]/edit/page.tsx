@@ -1,8 +1,10 @@
-import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { getCustomer } from '@/lib/api/customers';
 import { ApiError } from '@/lib/api/client';
 import { CustomerForm } from '@/components/shared/customer-form';
+import { PageBreadcrumb } from '@/components/shared/page-breadcrumb';
+import { PageHeader } from '@/components/shared/page-header';
+import { Card, CardContent } from '@/components/ui/card';
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -21,23 +23,21 @@ export default async function EditCustomerPage({ params }: Props) {
 
   return (
     <div className="mx-auto max-w-2xl">
-      <nav className="mb-6 flex items-center gap-1.5 text-sm text-gray-500" aria-label="Breadcrumb">
-        <Link href="/customers" className="hover:text-indigo-600">
-          Customers
-        </Link>
-        <span aria-hidden="true">/</span>
-        <Link href={`/customers/${id}`} className="hover:text-indigo-600">
-          {customer.name}
-        </Link>
-        <span aria-hidden="true">/</span>
-        <span className="text-gray-900">Edit</span>
-      </nav>
+      <PageBreadcrumb
+        items={[
+          { label: 'Customers', href: '/customers' },
+          { label: customer.name, href: `/customers/${id}` },
+          { label: 'Edit' },
+        ]}
+      />
 
-      <h1 className="mb-6 text-2xl font-semibold text-gray-900">Edit customer</h1>
+      <PageHeader title="Edit customer" />
 
-      <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-        <CustomerForm mode="edit" customer={customer} />
-      </div>
+      <Card>
+        <CardContent className="pt-6">
+          <CustomerForm mode="edit" customer={customer} />
+        </CardContent>
+      </Card>
     </div>
   );
 }

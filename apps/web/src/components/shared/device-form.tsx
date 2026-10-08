@@ -1,10 +1,24 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useForm } from 'react-hook-form';
+import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { AlertCircle, Loader2 } from 'lucide-react';
 import { clientFetch, ApiError } from '@/lib/api/client';
 import { deviceSchema, type DeviceFormValues } from '@/lib/validation/device';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
+import { FieldError } from './field-error';
 import type { Device } from '@/types/device';
 
 const DEVICE_TYPE_LABELS: Record<string, string> = {
@@ -22,14 +36,12 @@ interface Props {
   device?: Device;
 }
 
-const inputCls =
-  'mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500';
-
 export function DeviceForm({ mode, customerId, device }: Props) {
   const router = useRouter();
 
   const {
     register,
+    control,
     handleSubmit,
     setError,
     formState: { errors, isSubmitting },
@@ -82,132 +94,103 @@ export function DeviceForm({ mode, customerId, device }: Props) {
   };
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-5">
+    <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-6">
       {errors.root && (
-        <div
-          role="alert"
-          className="rounded-md border border-red-200 bg-red-50 p-4 text-sm text-red-700"
-        >
-          {errors.root.message}
-        </div>
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>{errors.root.message}</AlertDescription>
+        </Alert>
       )}
 
       <div className="grid gap-5 sm:grid-cols-2">
-        <div>
-          <label htmlFor="type" className="block text-sm font-medium text-gray-700">
-            Device type <span className="text-red-500" aria-hidden="true">*</span>
-          </label>
-          <select id="type" {...register('type')} className={inputCls}>
-            {Object.entries(DEVICE_TYPE_LABELS).map(([value, label]) => (
-              <option key={value} value={value}>
-                {label}
-              </option>
-            ))}
-          </select>
-          {errors.type && (
-            <p role="alert" className="mt-1.5 text-xs text-red-600">
-              {errors.type.message}
-            </p>
-          )}
+        <div className="space-y-2">
+          <Label htmlFor="type">
+            Device type <span className="text-destructive" aria-hidden="true">*</span>
+          </Label>
+          <Controller
+            control={control}
+            name="type"
+            render={({ field }) => (
+              <Select value={field.value} onValueChange={field.onChange}>
+                <SelectTrigger id="type" onBlur={field.onBlur} aria-invalid={!!errors.type}>
+                  <SelectValue placeholder="Select a type" />
+                </SelectTrigger>
+                <SelectContent>
+                  {Object.entries(DEVICE_TYPE_LABELS).map(([value, label]) => (
+                    <SelectItem key={value} value={value}>
+                      {label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+          />
+          <FieldError message={errors.type?.message} />
         </div>
 
-        <div>
-          <label htmlFor="brand" className="block text-sm font-medium text-gray-700">
-            Brand <span className="text-red-500" aria-hidden="true">*</span>
-          </label>
-          <input id="brand" type="text" {...register('brand')} className={inputCls} />
-          {errors.brand && (
-            <p role="alert" className="mt-1.5 text-xs text-red-600">
-              {errors.brand.message}
-            </p>
-          )}
+        <div className="space-y-2">
+          <Label htmlFor="brand">
+            Brand <span className="text-destructive" aria-hidden="true">*</span>
+          </Label>
+          <Input id="brand" type="text" aria-invalid={!!errors.brand} {...register('brand')} />
+          <FieldError message={errors.brand?.message} />
         </div>
 
-        <div>
-          <label htmlFor="model" className="block text-sm font-medium text-gray-700">
-            Model <span className="text-red-500" aria-hidden="true">*</span>
-          </label>
-          <input id="model" type="text" {...register('model')} className={inputCls} />
-          {errors.model && (
-            <p role="alert" className="mt-1.5 text-xs text-red-600">
-              {errors.model.message}
-            </p>
-          )}
+        <div className="space-y-2">
+          <Label htmlFor="model">
+            Model <span className="text-destructive" aria-hidden="true">*</span>
+          </Label>
+          <Input id="model" type="text" aria-invalid={!!errors.model} {...register('model')} />
+          <FieldError message={errors.model?.message} />
         </div>
 
-        <div>
-          <label htmlFor="serialNumber" className="block text-sm font-medium text-gray-700">
-            Serial number
-          </label>
-          <input id="serialNumber" type="text" {...register('serialNumber')} className={inputCls} />
-          {errors.serialNumber && (
-            <p role="alert" className="mt-1.5 text-xs text-red-600">
-              {errors.serialNumber.message}
-            </p>
-          )}
+        <div className="space-y-2">
+          <Label htmlFor="serialNumber">Serial number</Label>
+          <Input
+            id="serialNumber"
+            type="text"
+            aria-invalid={!!errors.serialNumber}
+            {...register('serialNumber')}
+          />
+          <FieldError message={errors.serialNumber?.message} />
         </div>
 
-        <div>
-          <label htmlFor="imei" className="block text-sm font-medium text-gray-700">
-            IMEI
-          </label>
-          <input id="imei" type="text" {...register('imei')} className={inputCls} />
-          {errors.imei && (
-            <p role="alert" className="mt-1.5 text-xs text-red-600">
-              {errors.imei.message}
-            </p>
-          )}
+        <div className="space-y-2">
+          <Label htmlFor="imei">IMEI</Label>
+          <Input id="imei" type="text" aria-invalid={!!errors.imei} {...register('imei')} />
+          <FieldError message={errors.imei?.message} />
         </div>
 
-        <div>
-          <label htmlFor="passcode" className="block text-sm font-medium text-gray-700">
-            Passcode / PIN
-          </label>
-          <input
+        <div className="space-y-2">
+          <Label htmlFor="passcode">Passcode / PIN</Label>
+          <Input
             id="passcode"
             type="password"
             autoComplete="off"
+            aria-invalid={!!errors.passcode}
             {...register('passcode')}
-            className={inputCls}
           />
           {mode === 'edit' && device?.hasPasscode && (
-            <p className="mt-1.5 text-xs text-gray-500">
+            <p className="text-xs text-muted-foreground">
               A passcode is stored. Enter a new value to replace it, or leave blank to keep it.
             </p>
           )}
-          {errors.passcode && (
-            <p role="alert" className="mt-1.5 text-xs text-red-600">
-              {errors.passcode.message}
-            </p>
-          )}
+          <FieldError message={errors.passcode?.message} />
         </div>
       </div>
 
-      <div>
-        <label htmlFor="notes" className="block text-sm font-medium text-gray-700">
-          Notes
-        </label>
-        <textarea id="notes" rows={3} {...register('notes')} className={inputCls} />
-        {errors.notes && (
-          <p role="alert" className="mt-1.5 text-xs text-red-600">
-            {errors.notes.message}
-          </p>
-        )}
+      <div className="space-y-2">
+        <Label htmlFor="notes">Notes</Label>
+        <Textarea id="notes" rows={3} aria-invalid={!!errors.notes} {...register('notes')} />
+        <FieldError message={errors.notes?.message} />
       </div>
 
-      <div className="flex justify-end gap-3 pt-1">
-        <button
-          type="button"
-          onClick={() => router.back()}
-          className="inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-300"
-        >
+      <div className="flex justify-end gap-3">
+        <Button type="button" variant="outline" onClick={() => router.back()}>
           Cancel
-        </button>
-        <button
-          type="submit"
-          disabled={isSubmitting}
-          className="inline-flex items-center rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:cursor-not-allowed disabled:opacity-50"
-        >
+        </Button>
+        <Button type="submit" disabled={isSubmitting}>
+          {isSubmitting && <Loader2 className="animate-spin" />}
           {isSubmitting
             ? mode === 'create'
               ? 'Adding…'
@@ -215,7 +198,7 @@ export function DeviceForm({ mode, customerId, device }: Props) {
             : mode === 'create'
               ? 'Add device'
               : 'Save changes'}
-        </button>
+        </Button>
       </div>
     </form>
   );

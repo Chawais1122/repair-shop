@@ -1,5 +1,7 @@
 import Link from 'next/link';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import type { PaginationMeta } from '@repair-shop/shared';
+import { Button } from '@/components/ui/button';
 
 interface Props {
   meta: PaginationMeta;
@@ -16,35 +18,37 @@ export function Pagination({ meta, buildHref }: Props) {
   const to = Math.min(page * limit, total);
 
   return (
-    <div className="flex items-center justify-between border-t border-gray-200 pt-4">
-      <p className="text-sm text-gray-600">
+    <div className="flex items-center justify-between gap-4">
+      <p className="text-sm text-muted-foreground">
         Showing {from}–{to} of {total}
       </p>
       <div className="flex gap-2">
         {page > 1 ? (
-          <Link
-            href={buildHref(page - 1)}
-            className="rounded-md border border-gray-300 bg-white px-3 py-1 text-sm text-gray-700 hover:bg-gray-50"
-          >
-            Previous
-          </Link>
+          <Button asChild variant="outline" size="sm">
+            <Link href={buildHref(page - 1)}>
+              <ChevronLeft />
+              Previous
+            </Link>
+          </Button>
         ) : (
-          <span className="rounded-md border border-gray-200 bg-gray-50 px-3 py-1 text-sm text-gray-400">
+          <Button variant="outline" size="sm" disabled>
+            <ChevronLeft />
             Previous
-          </span>
+          </Button>
         )}
 
         {page < totalPages ? (
-          <Link
-            href={buildHref(page + 1)}
-            className="rounded-md border border-gray-300 bg-white px-3 py-1 text-sm text-gray-700 hover:bg-gray-50"
-          >
-            Next
-          </Link>
+          <Button asChild variant="outline" size="sm">
+            <Link href={buildHref(page + 1)}>
+              Next
+              <ChevronRight />
+            </Link>
+          </Button>
         ) : (
-          <span className="rounded-md border border-gray-200 bg-gray-50 px-3 py-1 text-sm text-gray-400">
+          <Button variant="outline" size="sm" disabled>
             Next
-          </span>
+            <ChevronRight />
+          </Button>
         )}
       </div>
     </div>

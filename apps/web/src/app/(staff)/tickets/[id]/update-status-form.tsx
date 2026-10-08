@@ -2,8 +2,21 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { AlertCircle, Loader2 } from 'lucide-react';
 import { TicketStatus } from '@repair-shop/shared';
 import { clientFetch } from '@/lib/api/client';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
 
 const ALLOWED_TRANSITIONS: Record<TicketStatus, TicketStatus[]> = {
   [TicketStatus.RECEIVED]: [TicketStatus.DIAGNOSING, TicketStatus.CANCELLED],
@@ -69,58 +82,54 @@ export function UpdateStatusForm({ ticketId, currentStatus }: Props) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <h2 className="text-sm font-semibold uppercase tracking-wide text-gray-500">
-        Update Status
-      </h2>
+    <Card>
+      <CardHeader className="pb-3">
+        <CardTitle className="text-base">Update Status</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {error && (
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
 
-      {error && (
-        <div role="alert" className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">
-          {error}
-        </div>
-      )}
+          <div className="space-y-2">
+            <Label htmlFor="next-status">Move to</Label>
+            <Select value={status} onValueChange={(v) => setStatus(v as TicketStatus)}>
+              <SelectTrigger id="next-status">
+                <SelectValue placeholder="Select next status…" />
+              </SelectTrigger>
+              <SelectContent>
+                {options.map((s) => (
+                  <SelectItem key={s} value={s}>
+                    {STATUS_LABELS[s]}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
 
-      <div>
-        <label htmlFor="next-status" className="block text-sm font-medium text-gray-700">
-          Move to
-        </label>
-        <select
-          id="next-status"
-          value={status}
-          onChange={(e) => setStatus(e.target.value as TicketStatus)}
-          required
-          className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-        >
-          <option value="">Select next status…</option>
-          {options.map((s) => (
-            <option key={s} value={s}>
-              {STATUS_LABELS[s]}
-            </option>
-          ))}
-        </select>
-      </div>
+          <div className="space-y-2">
+            <Label htmlFor="status-notes">
+              Notes <span className="text-muted-foreground">(optional)</span>
+            </Label>
+            <Textarea
+              id="status-notes"
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              placeholder="Add a note about this status change…"
+              rows={2}
+            />
+          </div>
 
-      <div>
-        <label htmlFor="status-notes" className="block text-sm font-medium text-gray-700">
-          Notes <span className="text-gray-400">(optional)</span>
-        </label>
-        <textarea
-          id="status-notes"
-          value={notes}
-          onChange={(e) => setNotes(e.target.value)}
-          placeholder="Add a note about this status change…"
-          rows={2}
-          className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-        />
-      </div>
-
-      <button
-        type="submit"
-        disabled={loading || !status}
-        className="inline-flex w-full items-center justify-center rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:cursor-not-allowed disabled:opacity-50"
-      >
-        {loading ? 'Updating…' : 'Update status'}
-      </button>
-    </form>
+          <Button type="submit" disabled={loading || !status} className="w-full">
+            {loading && <Loader2 className="animate-spin" />}
+            {loading ? 'Updating…' : 'Update status'}
+          </Button>
+        </form>
+      </CardContent>
+    </Card>
   );
 }

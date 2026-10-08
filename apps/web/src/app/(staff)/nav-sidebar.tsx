@@ -3,17 +3,33 @@
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useState } from 'react';
+import { LayoutDashboard, LogOut, Menu, Ticket, Users, Wrench } from 'lucide-react';
 import { logout } from '@/lib/api/auth';
+import { Button } from '@/components/ui/button';
+import { Separator } from '@/components/ui/separator';
+import { Sheet, SheetContent, SheetDescription, SheetTitle } from '@/components/ui/sheet';
+import { cn } from '@/lib/utils';
 
 const NAV_ITEMS = [
-  { href: '/dashboard', label: 'Dashboard' },
-  { href: '/customers', label: 'Customers' },
-  { href: '/tickets', label: 'Tickets' },
+  { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { href: '/customers', label: 'Customers', icon: Users },
+  { href: '/tickets', label: 'Tickets', icon: Ticket },
 ];
 
 interface Props {
   userEmail: string;
   userRole: string;
+}
+
+function Brand() {
+  return (
+    <div className="flex items-center gap-2">
+      <div className="flex size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
+        <Wrench className="size-4" aria-hidden="true" />
+      </div>
+      <span className="text-base font-semibold tracking-tight">Repair Shop</span>
+    </div>
+  );
 }
 
 export function NavSidebar({ userEmail, userRole }: Props) {
@@ -33,96 +49,89 @@ export function NavSidebar({ userEmail, userRole }: Props) {
     router.refresh();
   };
 
-  const isActive = (href: string) =>
-    pathname === href || pathname.startsWith(`${href}/`);
+  const isActive = (href: string) => pathname === href || pathname.startsWith(`${href}/`);
 
   const links = (
-    <nav className="flex-1 space-y-1 px-2 py-2" aria-label="Main navigation">
-      {NAV_ITEMS.map((item) => (
-        <Link
-          key={item.href}
-          href={item.href}
-          onClick={() => setMobileOpen(false)}
-          aria-current={isActive(item.href) ? 'page' : undefined}
-          className={`flex items-center rounded-md px-3 py-2 text-sm font-medium ${
-            isActive(item.href)
-              ? 'bg-indigo-700 text-white'
-              : 'text-gray-300 hover:bg-gray-700 hover:text-white'
-          }`}
-        >
-          {item.label}
-        </Link>
-      ))}
+    <nav className="flex-1 space-y-1 px-3 py-2" aria-label="Main navigation">
+      {NAV_ITEMS.map((item) => {
+        const active = isActive(item.href);
+        const Icon = item.icon;
+        return (
+          <Link
+            key={item.href}
+            href={item.href}
+            onClick={() => setMobileOpen(false)}
+            aria-current={active ? 'page' : undefined}
+            className={cn(
+              'flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring',
+              active
+                ? 'bg-sidebar-accent text-sidebar-accent-foreground'
+                : 'text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
+            )}
+          >
+            <Icon className="size-4" aria-hidden="true" />
+            {item.label}
+          </Link>
+        );
+      })}
     </nav>
   );
 
   const footer = (
-    <div className="border-t border-gray-700 px-4 py-3">
-      <p className="truncate text-xs text-gray-400">{userEmail}</p>
-      <p className="mt-0.5 text-xs capitalize text-gray-600">{userRole.toLowerCase()}</p>
-      <button
+    <div className="px-3 pb-4">
+      <Separator className="mb-3 bg-sidebar-border" />
+      <div className="px-3">
+        <p className="truncate text-sm font-medium">{userEmail}</p>
+        <p className="text-xs capitalize text-muted-foreground">{userRole.toLowerCase()}</p>
+      </div>
+      <Button
         type="button"
+        variant="ghost"
         onClick={handleLogout}
         disabled={loggingOut}
-        className="mt-3 flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm font-medium text-gray-300 hover:bg-gray-700 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500 disabled:cursor-not-allowed disabled:opacity-50"
+        className="mt-2 w-full justify-start gap-3 px-3 text-sidebar-foreground/70 hover:bg-sidebar-accent"
       >
-        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" aria-hidden="true">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15m3 0l3-3m0 0l-3-3m3 3H9" />
-        </svg>
+        <LogOut aria-hidden="true" />
         {loggingOut ? 'Signing out…' : 'Sign out'}
-      </button>
+      </Button>
     </div>
   );
 
   return (
     <>
       {/* Mobile top bar */}
-      <div className="fixed inset-x-0 top-0 z-30 flex h-14 items-center justify-between bg-gray-900 px-4 shadow md:hidden">
-        <span className="text-base font-semibold text-white">Repair Shop</span>
-        <button
+      <div className="fixed inset-x-0 top-0 z-30 flex h-14 items-center justify-between border-b bg-sidebar px-4 text-sidebar-foreground md:hidden">
+        <Brand />
+        <Button
+          variant="ghost"
+          size="icon"
           onClick={() => setMobileOpen(true)}
           aria-label="Open navigation menu"
-          className="rounded-md p-2 text-gray-300 hover:bg-gray-700 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500"
         >
-          <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" aria-hidden="true">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
-          </svg>
-        </button>
+          <Menu />
+        </Button>
       </div>
 
-      {/* Mobile overlay */}
-      {mobileOpen && (
-        <div
-          className="fixed inset-0 z-40 bg-black/60 md:hidden"
-          aria-hidden="true"
-          onClick={() => setMobileOpen(false)}
-        />
-      )}
-
       {/* Mobile drawer */}
-      {mobileOpen && (
-        <div className="fixed inset-y-0 left-0 z-50 flex w-64 flex-col bg-gray-900 md:hidden" role="dialog" aria-modal="true" aria-label="Navigation menu">
-          <div className="flex items-center justify-between px-4 py-4">
-            <span className="text-base font-semibold text-white">Repair Shop</span>
-            <button
-              onClick={() => setMobileOpen(false)}
-              aria-label="Close navigation menu"
-              className="rounded-md p-1.5 text-gray-400 hover:bg-gray-700 hover:text-white"
-            >
-              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" aria-hidden="true">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
+      <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
+        <SheetContent
+          side="left"
+          className="flex w-64 flex-col gap-0 bg-sidebar p-0 text-sidebar-foreground"
+        >
+          <SheetTitle className="sr-only">Navigation menu</SheetTitle>
+          <SheetDescription className="sr-only">Main application navigation</SheetDescription>
+          <div className="px-6 py-4">
+            <Brand />
           </div>
           {links}
           {footer}
-        </div>
-      )}
+        </SheetContent>
+      </Sheet>
 
       {/* Desktop sidebar */}
-      <aside className="hidden md:flex md:w-56 md:shrink-0 md:flex-col bg-gray-900">
-        <div className="px-4 py-5">
-          <span className="text-lg font-semibold tracking-tight text-white">Repair Shop</span>
+      <aside className="hidden border-r bg-sidebar text-sidebar-foreground md:sticky md:top-0 md:flex md:h-screen md:w-60 md:shrink-0 md:flex-col">
+        <div className="px-6 py-5">
+          <Brand />
         </div>
         {links}
         {footer}

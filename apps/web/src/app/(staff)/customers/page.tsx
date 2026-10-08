@@ -1,7 +1,22 @@
 import Link from 'next/link';
+import { AlertCircle, Plus, Search, Users } from 'lucide-react';
 import { getCustomers } from '@/lib/api/customers';
-import { Pagination } from '@/components/shared/pagination';
 import { ApiError } from '@/lib/api/client';
+import { Pagination } from '@/components/shared/pagination';
+import { PageHeader } from '@/components/shared/page-header';
+import { EmptyState } from '@/components/shared/empty-state';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 
 interface Props {
   searchParams: Promise<{ search?: string; page?: string }>;
@@ -17,13 +32,16 @@ export default async function CustomersPage({ searchParams }: Props) {
   } catch (err) {
     if (err instanceof ApiError && err.status === 401) {
       return (
-        <div role="alert" className="rounded-md border border-red-200 bg-red-50 p-4 text-sm text-red-700">
-          Your session has expired. Please{' '}
-          <Link href="/login" className="font-medium underline">
-            sign in again
-          </Link>
-          .
-        </div>
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            Your session has expired. Please{' '}
+            <Link href="/login" className="font-medium underline">
+              sign in again
+            </Link>
+            .
+          </AlertDescription>
+        </Alert>
       );
     }
     throw err;
@@ -40,116 +58,103 @@ export default async function CustomersPage({ searchParams }: Props) {
 
   return (
     <div>
-      <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-2xl font-semibold text-gray-900">Customers</h1>
-        <Link
-          href="/customers/new"
-          className="inline-flex items-center rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
-        >
-          Add customer
-        </Link>
-      </div>
+      <PageHeader
+        title="Customers"
+        actions={
+          <Button asChild>
+            <Link href="/customers/new">
+              <Plus />
+              Add customer
+            </Link>
+          </Button>
+        }
+      />
 
       <form action="/customers" method="get" className="mb-5 flex flex-wrap gap-2">
         <label htmlFor="customer-search" className="sr-only">
           Search customers
         </label>
-        <input
-          id="customer-search"
-          type="text"
-          name="search"
-          defaultValue={search}
-          placeholder="Search by name, phone, or email…"
-          className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 sm:w-72"
-        />
+        <div className="relative w-full sm:w-72">
+          <Search
+            className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
+            aria-hidden="true"
+          />
+          <Input
+            id="customer-search"
+            type="text"
+            name="search"
+            defaultValue={search}
+            placeholder="Search by name, phone, or email…"
+            className="bg-background pl-8"
+          />
+        </div>
         <input type="hidden" name="page" value="1" />
-        <button
-          type="submit"
-          className="inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-300"
-        >
+        <Button type="submit" variant="outline">
           Search
-        </button>
+        </Button>
         {search && (
-          <Link
-            href="/customers"
-            className="inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50"
-          >
-            Clear
-          </Link>
+          <Button asChild variant="ghost">
+            <Link href="/customers">Clear</Link>
+          </Button>
         )}
       </form>
 
       {customers.length === 0 ? (
-        <div className="rounded-lg border-2 border-dashed border-gray-200 p-10 text-center">
-          <p className="text-sm text-gray-500">
-            {search ? `No customers found for "${search}".` : 'No customers yet.'}
-          </p>
-          {!search && (
-            <Link
-              href="/customers/new"
-              className="mt-2 inline-block text-sm font-medium text-indigo-600 hover:text-indigo-500"
-            >
-              Add your first customer →
-            </Link>
-          )}
-        </div>
+        <EmptyState
+          icon={<Users />}
+          message={search ? `No customers found for "${search}".` : 'No customers yet.'}
+          actionLabel={search ? undefined : 'Add your first customer'}
+          actionHref={search ? undefined : '/customers/new'}
+          className="bg-background"
+        />
       ) : (
-        <div className="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm">
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-gray-500">
-                    Name
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-gray-500">
-                    Phone
-                  </th>
-                  <th className="hidden px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-gray-500 sm:table-cell">
-                    Email
-                  </th>
-                  <th className="hidden px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-gray-500 sm:table-cell">
-                    Added
-                  </th>
-                  <th className="px-4 py-3" />
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100 bg-white">
-                {customers.map((c) => (
-                  <tr key={c.id} className="hover:bg-gray-50">
-                    <td className="px-4 py-3 font-medium text-gray-900">
-                      <Link
-                        href={`/customers/${c.id}`}
-                        className="hover:text-indigo-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-indigo-500"
-                      >
-                        {c.name}
-                      </Link>
-                    </td>
-                    <td className="px-4 py-3 text-sm text-gray-600">{c.phone}</td>
-                    <td className="hidden px-4 py-3 text-sm text-gray-600 sm:table-cell">
-                      {c.email ?? '—'}
-                    </td>
-                    <td className="hidden px-4 py-3 text-sm text-gray-500 sm:table-cell">
-                      {new Date(c.createdAt).toLocaleDateString()}
-                    </td>
-                    <td className="px-4 py-3 text-right">
-                      <Link
-                        href={`/customers/${c.id}`}
-                        className="text-sm font-medium text-indigo-600 hover:text-indigo-800"
-                      >
-                        View
-                      </Link>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+        <Card>
+          <Table>
+            <TableHeader>
+              <TableRow className="hover:bg-transparent">
+                <TableHead className="px-4">Name</TableHead>
+                <TableHead className="px-4">Phone</TableHead>
+                <TableHead className="hidden px-4 sm:table-cell">Email</TableHead>
+                <TableHead className="hidden px-4 sm:table-cell">Added</TableHead>
+                <TableHead className="px-4">
+                  <span className="sr-only">Actions</span>
+                </TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {customers.map((c) => (
+                <TableRow key={c.id}>
+                  <TableCell className="px-4 font-medium">
+                    <Link
+                      href={`/customers/${c.id}`}
+                      className="underline-offset-4 hover:underline"
+                    >
+                      {c.name}
+                    </Link>
+                  </TableCell>
+                  <TableCell className="px-4 text-muted-foreground">{c.phone}</TableCell>
+                  <TableCell className="hidden px-4 text-muted-foreground sm:table-cell">
+                    {c.email ?? '—'}
+                  </TableCell>
+                  <TableCell className="hidden px-4 text-muted-foreground sm:table-cell">
+                    {new Date(c.createdAt).toLocaleDateString()}
+                  </TableCell>
+                  <TableCell className="px-4 text-right">
+                    <Button asChild variant="ghost" size="sm">
+                      <Link href={`/customers/${c.id}`}>View</Link>
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
 
-          <div className="px-4 py-3">
-            <Pagination meta={meta} buildHref={buildHref} />
-          </div>
-        </div>
+          {meta.total > meta.limit && (
+            <div className="border-t px-4 py-3">
+              <Pagination meta={meta} buildHref={buildHref} />
+            </div>
+          )}
+        </Card>
       )}
     </div>
   );

@@ -1,8 +1,24 @@
+import Link from 'next/link';
+import {
+  AlertCircle,
+  CircleDollarSign,
+  PackageCheck,
+  Plus,
+  ReceiptText,
+  Ticket,
+  Truck,
+  Users,
+  Wrench,
+} from 'lucide-react';
+import { TicketStatus } from '@repair-shop/shared';
 import { getDashboard } from '@/lib/api/reports';
 import { StatCard } from '@/components/shared/stat-card';
 import { RecentTicketsTable } from '@/components/shared/recent-tickets-table';
 import { TicketStatusBadge } from '@/components/shared/ticket-status-badge';
-import { TicketStatus } from '@repair-shop/shared';
+import { PageHeader } from '@/components/shared/page-header';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 export default async function DashboardPage() {
   let data;
@@ -10,15 +26,11 @@ export default async function DashboardPage() {
     data = await getDashboard();
   } catch {
     return (
-      <div
-        role="alert"
-        className="rounded-md border border-red-200 bg-red-50 p-6 text-center"
-      >
-        <p className="font-semibold text-red-700">Failed to load dashboard</p>
-        <p className="mt-1 text-sm text-red-600">
-          Check your connection and refresh the page.
-        </p>
-      </div>
+      <Alert variant="destructive">
+        <AlertCircle className="h-4 w-4" />
+        <AlertTitle>Failed to load dashboard</AlertTitle>
+        <AlertDescription>Check your connection and refresh the page.</AlertDescription>
+      </Alert>
     );
   }
 
@@ -50,58 +62,93 @@ export default async function DashboardPage() {
   ];
 
   return (
-    <div className="space-y-8">
-      <h1 className="text-2xl font-semibold text-gray-900">Dashboard</h1>
+    <div className="space-y-6">
+      <PageHeader
+        title="Dashboard"
+        className="mb-0"
+        actions={
+          <Button asChild>
+            <Link href="/tickets/new">
+              <Plus />
+              New ticket
+            </Link>
+          </Button>
+        }
+      />
 
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-        <StatCard label="Total Customers" value={data.totalCustomers} accent="blue" />
-        <StatCard label="Total Tickets" value={data.totalTickets} />
-        <StatCard label="Revenue" value={`$${revenue.toFixed(2)}`} accent="green" />
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+        <StatCard
+          label="Total Customers"
+          value={data.totalCustomers}
+          accent="blue"
+          icon={<Users />}
+        />
+        <StatCard label="Total Tickets" value={data.totalTickets} icon={<Ticket />} />
+        <StatCard
+          label="Revenue"
+          value={`$${revenue.toFixed(2)}`}
+          accent="green"
+          icon={<CircleDollarSign />}
+        />
         <StatCard
           label="Outstanding"
           value={`$${outstanding.toFixed(2)}`}
           accent={outstanding > 0 ? 'red' : 'default'}
+          icon={<ReceiptText />}
         />
       </div>
 
-      <section>
-        <h2 className="mb-3 text-base font-semibold text-gray-700">Tickets by Status</h2>
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-8">
-          {allStatuses.map((status) => (
-            <div
-              key={status}
-              className="rounded-lg border border-gray-200 bg-white p-3 shadow-sm text-center"
-            >
-              <p className="text-2xl font-bold text-gray-900">
-                {data.ticketsByStatus[status] ?? 0}
-              </p>
-              <div className="mt-1 flex justify-center">
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Tickets by Status</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-8">
+            {allStatuses.map((status) => (
+              <div
+                key={status}
+                className="flex flex-col items-center gap-2 rounded-lg border bg-muted/30 p-3 text-center"
+              >
+                <p className="text-2xl font-bold">{data.ticketsByStatus[status] ?? 0}</p>
                 <TicketStatusBadge status={status} />
               </div>
-            </div>
-          ))}
-        </div>
-      </section>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
 
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
-        <StatCard label="Active Tickets" value={activeTickets} accent="orange" sub="in progress" />
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <StatCard
+          label="Active Tickets"
+          value={activeTickets}
+          accent="orange"
+          sub="in progress"
+          icon={<Wrench />}
+        />
         <StatCard
           label="Ready for Pickup"
           value={data.ticketsByStatus[TicketStatus.READY] ?? 0}
           accent="green"
+          icon={<PackageCheck />}
         />
         <StatCard
           label="Delivered"
           value={data.ticketsByStatus[TicketStatus.DELIVERED] ?? 0}
+          icon={<Truck />}
         />
       </div>
 
-      <section>
-        <h2 className="mb-3 text-base font-semibold text-gray-700">Recent Tickets</h2>
-        <div className="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm">
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0">
+          <CardTitle className="text-base">Recent Tickets</CardTitle>
+          <Button asChild variant="ghost" size="sm">
+            <Link href="/tickets">View all</Link>
+          </Button>
+        </CardHeader>
+        <CardContent className="px-0 pb-2">
           <RecentTicketsTable tickets={data.recentTickets} />
-        </div>
-      </section>
+        </CardContent>
+      </Card>
     </div>
   );
 }

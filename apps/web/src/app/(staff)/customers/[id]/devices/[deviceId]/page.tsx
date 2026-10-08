@@ -1,8 +1,13 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import { Pencil } from 'lucide-react';
 import { getDevice } from '@/lib/api/devices';
 import { getCustomer } from '@/lib/api/customers';
 import { ApiError } from '@/lib/api/client';
+import { PageBreadcrumb } from '@/components/shared/page-breadcrumb';
+import { PageHeader } from '@/components/shared/page-header';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
 import { DeleteDeviceButton } from './delete-device-button';
 
 interface Props {
@@ -21,46 +26,35 @@ export default async function DeviceDetailPage({ params }: Props) {
     throw err;
   }
 
+  const deviceLabel = `${device.brand} ${device.model}`;
+
   return (
     <div className="mx-auto max-w-2xl">
-      <nav
-        className="mb-6 flex items-center gap-1.5 text-sm text-gray-500"
-        aria-label="Breadcrumb"
-      >
-        <Link href="/customers" className="hover:text-indigo-600">
-          Customers
-        </Link>
-        <span aria-hidden="true">/</span>
-        <Link href={`/customers/${id}`} className="hover:text-indigo-600">
-          {customer.name}
-        </Link>
-        <span aria-hidden="true">/</span>
-        <span className="text-gray-900">
-          {device.brand} {device.model}
-        </span>
-      </nav>
+      <PageBreadcrumb
+        items={[
+          { label: 'Customers', href: '/customers' },
+          { label: customer.name, href: `/customers/${id}` },
+          { label: deviceLabel },
+        ]}
+      />
 
-      <div className="mb-5 flex items-start justify-between gap-4">
-        <h1 className="text-2xl font-semibold text-gray-900">
-          {device.brand} {device.model}
-        </h1>
-        <div className="flex shrink-0 gap-2">
-          <Link
-            href={`/customers/${id}/devices/${deviceId}/edit`}
-            className="inline-flex items-center rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-300"
-          >
-            Edit
-          </Link>
-          <DeleteDeviceButton
-            deviceId={deviceId}
-            customerId={id}
-            deviceLabel={`${device.brand} ${device.model}`}
-          />
-        </div>
-      </div>
+      <PageHeader
+        title={deviceLabel}
+        actions={
+          <>
+            <Button asChild variant="outline">
+              <Link href={`/customers/${id}/devices/${deviceId}/edit`}>
+                <Pencil />
+                Edit
+              </Link>
+            </Button>
+            <DeleteDeviceButton deviceId={deviceId} customerId={id} deviceLabel={deviceLabel} />
+          </>
+        }
+      />
 
-      <div className="rounded-lg border border-gray-200 bg-white shadow-sm">
-        <dl className="divide-y divide-gray-100">
+      <Card>
+        <dl className="divide-y">
           <Row label="Type" value={device.type.charAt(0) + device.type.slice(1).toLowerCase()} />
           <Row label="Brand" value={device.brand} />
           <Row label="Model" value={device.model} />
@@ -70,16 +64,16 @@ export default async function DeviceDetailPage({ params }: Props) {
           <Row label="Notes" value={device.notes ?? '—'} />
           <Row label="Added" value={new Date(device.createdAt).toLocaleDateString()} />
         </dl>
-      </div>
+      </Card>
     </div>
   );
 }
 
 function Row({ label, value }: { label: string; value: string }) {
   return (
-    <div className="grid grid-cols-3 gap-4 px-5 py-3.5">
-      <dt className="text-sm font-medium text-gray-500">{label}</dt>
-      <dd className="col-span-2 text-sm text-gray-900">{value}</dd>
+    <div className="grid grid-cols-3 gap-4 px-6 py-4">
+      <dt className="text-sm font-medium text-muted-foreground">{label}</dt>
+      <dd className="col-span-2 text-sm">{value}</dd>
     </div>
   );
 }

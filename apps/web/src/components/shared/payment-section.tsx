@@ -1,21 +1,35 @@
 'use client';
 
 import { useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { AlertCircle, Loader2, Plus } from 'lucide-react';
 import { PaymentMethod, PaymentStatus } from '@repair-shop/shared';
 import { clientFetch } from '@/lib/api/client';
 import { addPaymentSchema, type AddPaymentFormValues } from '@/lib/validation/payment';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Separator } from '@/components/ui/separator';
+import { cn } from '@/lib/utils';
+import { FieldError } from './field-error';
 import type { Payment, PaymentSummary } from '@/types/payment';
 
 interface Props {
   ticketId: string;
   initialSummary: PaymentSummary;
 }
-
-const inputCls =
-  'mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500';
 
 const PAYMENT_METHOD_LABELS: Record<PaymentMethod, string> = {
   [PaymentMethod.CASH]: 'Cash',
@@ -24,9 +38,9 @@ const PAYMENT_METHOD_LABELS: Record<PaymentMethod, string> = {
 };
 
 const PAYMENT_STATUS_STYLES: Record<PaymentStatus, string> = {
-  [PaymentStatus.COMPLETED]: 'bg-green-100 text-green-800',
-  [PaymentStatus.PENDING]: 'bg-yellow-100 text-yellow-800',
-  [PaymentStatus.REFUNDED]: 'bg-gray-100 text-gray-700',
+  [PaymentStatus.COMPLETED]: 'bg-green-100 text-green-800 hover:bg-green-100',
+  [PaymentStatus.PENDING]: 'bg-yellow-100 text-yellow-800 hover:bg-yellow-100',
+  [PaymentStatus.REFUNDED]: 'bg-zinc-100 text-zinc-700 hover:bg-zinc-100',
 };
 
 const PAYMENT_STATUS_LABELS: Record<PaymentStatus, string> = {
@@ -52,6 +66,7 @@ export function PaymentSection({ ticketId, initialSummary }: Props) {
 
   const {
     register,
+    control,
     handleSubmit,
     reset,
     formState: { errors },
@@ -87,190 +102,212 @@ export function PaymentSection({ ticketId, initialSummary }: Props) {
     },
   });
 
-  const formatAmount =(value: string | null) =>
+  const formatAmount = (value: string | null) =>
     value !== null ? `$${parseFloat(value).toFixed(2)}` : '—';
 
   return (
-    <section className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm">
-      <div className="mb-4 flex items-center justify-between">
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-gray-500">Payments</h2>
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+        <CardTitle className="text-base">Payments</CardTitle>
         {!summary.isFullyPaid && (
-          <button
-            onClick={() => setShowForm((v) => !v)}
-            className="inline-flex items-center rounded-md border border-gray-300 bg-white px-3 py-1.5 text-xs font-semibold text-gray-700 shadow-sm hover:bg-gray-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-300"
-          >
+          <Button variant="outline" size="sm" onClick={() => setShowForm((v) => !v)}>
+            {!showForm && <Plus />}
             {showForm ? 'Cancel' : 'Add payment'}
-          </button>
+          </Button>
         )}
-      </div>
+      </CardHeader>
 
-      {/* Summary */}
-      <dl className="mb-4 grid grid-cols-2 gap-x-4 gap-y-3 rounded-md bg-gray-50 p-4 text-sm">
-        <div>
-          <dt className="text-gray-500">Total cost</dt>
-          <dd className="mt-0.5 font-medium text-gray-900">{formatAmount(summary.totalCost)}</dd>
-        </div>
-        <div>
-          <dt className="text-gray-500">Paid</dt>
-          <dd className="mt-0.5 font-medium text-green-700">{formatAmount(summary.paidAmount)}</dd>
-        </div>
-        <div>
-          <dt className="text-gray-500">Remaining</dt>
-          <dd className="mt-0.5 font-medium text-red-600">{formatAmount(summary.remainingAmount)}</dd>
-        </div>
-        <div>
-          <dt className="text-gray-500">Status</dt>
-          <dd className="mt-0.5">
-            {summary.isFullyPaid ? (
-              <span className="inline-flex items-center rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-800">
-                Paid in full
-              </span>
-            ) : (
-              <span className="inline-flex items-center rounded-full bg-yellow-100 px-2 py-0.5 text-xs font-medium text-yellow-800">
-                Outstanding
-              </span>
-            )}
-          </dd>
-        </div>
-      </dl>
-
-      {/* Add payment form */}
-      {showForm && (
-        <form
-          onSubmit={handleSubmit((v) => mutation.mutate(v))}
-          className="mb-5 space-y-4 rounded-md border border-gray-200 bg-gray-50 p-4"
-        >
-          <h3 className="text-sm font-semibold text-gray-900">New payment</h3>
-
+      <CardContent className="space-y-4">
+        {/* Summary */}
+        <dl className="grid grid-cols-2 gap-x-4 gap-y-3 rounded-lg bg-muted/50 p-4 text-sm">
           <div>
-            <label htmlFor="payment-amount" className="block text-sm font-medium text-gray-700">
-              Amount ($)
-            </label>
-            <input
-              id="payment-amount"
-              type="number"
-              step="0.01"
-              min="0.01"
-              {...register('amount', { valueAsNumber: true })}
-              className={inputCls}
-            />
-            {errors.amount && (
-              <p role="alert" className="mt-1.5 text-xs text-red-600">
-                {errors.amount.message}
-              </p>
-            )}
+            <dt className="text-muted-foreground">Total cost</dt>
+            <dd className="mt-0.5 font-medium">{formatAmount(summary.totalCost)}</dd>
           </div>
-
           <div>
-            <label htmlFor="payment-method" className="block text-sm font-medium text-gray-700">
-              Method
-            </label>
-            <select id="payment-method" {...register('method')} className={inputCls}>
-              {Object.values(PaymentMethod).map((m) => (
-                <option key={m} value={m}>
-                  {PAYMENT_METHOD_LABELS[m]}
-                </option>
-              ))}
-            </select>
+            <dt className="text-muted-foreground">Paid</dt>
+            <dd className="mt-0.5 font-medium text-green-700">
+              {formatAmount(summary.paidAmount)}
+            </dd>
           </div>
-
           <div>
-            <label htmlFor="payment-status" className="block text-sm font-medium text-gray-700">
-              Status
-            </label>
-            <select id="payment-status" {...register('status')} className={inputCls}>
-              <option value={PaymentStatus.COMPLETED}>Completed</option>
-              <option value={PaymentStatus.PENDING}>Pending</option>
-            </select>
+            <dt className="text-muted-foreground">Remaining</dt>
+            <dd className="mt-0.5 font-medium text-red-600">
+              {formatAmount(summary.remainingAmount)}
+            </dd>
           </div>
-
           <div>
-            <label htmlFor="payment-transaction-id" className="block text-sm font-medium text-gray-700">
-              Transaction ID <span className="text-gray-400">(optional)</span>
-            </label>
-            <input
-              id="payment-transaction-id"
-              type="text"
-              {...register('transactionId')}
-              className={inputCls}
-            />
+            <dt className="text-muted-foreground">Status</dt>
+            <dd className="mt-0.5">
+              {summary.isFullyPaid ? (
+                <Badge
+                  variant="secondary"
+                  className="bg-green-100 font-medium text-green-800 hover:bg-green-100"
+                >
+                  Paid in full
+                </Badge>
+              ) : (
+                <Badge
+                  variant="secondary"
+                  className="bg-yellow-100 font-medium text-yellow-800 hover:bg-yellow-100"
+                >
+                  Outstanding
+                </Badge>
+              )}
+            </dd>
           </div>
+        </dl>
 
-          <div>
-            <label htmlFor="payment-notes" className="block text-sm font-medium text-gray-700">
-              Notes <span className="text-gray-400">(optional)</span>
-            </label>
-            <input
-              id="payment-notes"
-              type="text"
-              {...register('notes')}
-              className={inputCls}
-            />
-          </div>
-
-          {mutation.error && (
-            <div role="alert" className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">
-              {mutation.error.message}
-            </div>
-          )}
-
-          <button
-            type="submit"
-            disabled={mutation.isPending}
-            className="inline-flex w-full items-center justify-center rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:cursor-not-allowed disabled:opacity-50"
+        {/* Add payment form */}
+        {showForm && (
+          <form
+            onSubmit={handleSubmit((v) => mutation.mutate(v))}
+            className="space-y-4 rounded-lg border p-4"
           >
-            {mutation.isPending ? 'Saving…' : 'Save payment'}
-          </button>
-        </form>
-      )}
+            <h3 className="text-sm font-semibold">New payment</h3>
 
-      {/* Payment history */}
-      {summary.payments.length === 0 ? (
-        <p className="text-sm text-gray-400">No payments recorded yet.</p>
-      ) : (
-        <>
-          {completeMutation.error && (
-            <div role="alert" className="mb-2 rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">
-              {completeMutation.error.message}
+            <div className="space-y-2">
+              <Label htmlFor="payment-amount">Amount ($)</Label>
+              <Input
+                id="payment-amount"
+                type="number"
+                step="0.01"
+                min="0.01"
+                aria-invalid={!!errors.amount}
+                {...register('amount', { valueAsNumber: true })}
+              />
+              <FieldError message={errors.amount?.message} />
             </div>
-          )}
-          <ul className="divide-y divide-gray-100">
-            {summary.payments.map((p) => {
-              const completing = completeMutation.isPending && completeMutation.variables === p.id;
-              return (
-                <li key={p.id} className="flex items-center justify-between gap-3 py-2.5 text-sm">
-                  <div>
-                    <span className="font-medium text-gray-900">{formatAmount(p.amount)}</span>
-                    <span className="ml-2 text-gray-500">{PAYMENT_METHOD_LABELS[p.method]}</span>
-                    {p.paidAt && (
-                      <span className="ml-2 text-gray-400">
-                        {new Date(p.paidAt).toLocaleDateString()}
+
+            <div className="space-y-2">
+              <Label htmlFor="payment-method">Method</Label>
+              <Controller
+                control={control}
+                name="method"
+                render={({ field }) => (
+                  <Select value={field.value} onValueChange={field.onChange}>
+                    <SelectTrigger id="payment-method" onBlur={field.onBlur}>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {Object.values(PaymentMethod).map((m) => (
+                        <SelectItem key={m} value={m}>
+                          {PAYMENT_METHOD_LABELS[m]}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="payment-status">Status</Label>
+              <Controller
+                control={control}
+                name="status"
+                render={({ field }) => (
+                  <Select value={field.value} onValueChange={field.onChange}>
+                    <SelectTrigger id="payment-status" onBlur={field.onBlur}>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value={PaymentStatus.COMPLETED}>Completed</SelectItem>
+                      <SelectItem value={PaymentStatus.PENDING}>Pending</SelectItem>
+                    </SelectContent>
+                  </Select>
+                )}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="payment-transaction-id">
+                Transaction ID <span className="text-muted-foreground">(optional)</span>
+              </Label>
+              <Input id="payment-transaction-id" type="text" {...register('transactionId')} />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="payment-notes">
+                Notes <span className="text-muted-foreground">(optional)</span>
+              </Label>
+              <Input id="payment-notes" type="text" {...register('notes')} />
+            </div>
+
+            {mutation.error && (
+              <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>{mutation.error.message}</AlertDescription>
+              </Alert>
+            )}
+
+            <Button type="submit" disabled={mutation.isPending} className="w-full">
+              {mutation.isPending && <Loader2 className="animate-spin" />}
+              {mutation.isPending ? 'Saving…' : 'Save payment'}
+            </Button>
+          </form>
+        )}
+
+        <Separator />
+
+        {/* Payment history */}
+        {summary.payments.length === 0 ? (
+          <p className="text-sm text-muted-foreground">No payments recorded yet.</p>
+        ) : (
+          <>
+            {completeMutation.error && (
+              <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>{completeMutation.error.message}</AlertDescription>
+              </Alert>
+            )}
+            <ul className="divide-y">
+              {summary.payments.map((p) => {
+                const completing =
+                  completeMutation.isPending && completeMutation.variables === p.id;
+                return (
+                  <li
+                    key={p.id}
+                    className="flex flex-wrap items-center justify-between gap-2 py-2.5 text-sm first:pt-0 last:pb-0"
+                  >
+                    <div>
+                      <span className="font-medium">{formatAmount(p.amount)}</span>
+                      <span className="ml-2 text-muted-foreground">
+                        {PAYMENT_METHOD_LABELS[p.method]}
                       </span>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-2">
-                    {p.status === PaymentStatus.PENDING && (
-                      <button
-                        type="button"
-                        onClick={() => completeMutation.mutate(p.id)}
-                        disabled={completeMutation.isPending}
-                        className="inline-flex items-center rounded-md border border-gray-300 bg-white px-2.5 py-1 text-xs font-semibold text-gray-700 shadow-sm hover:bg-gray-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-300 disabled:cursor-not-allowed disabled:opacity-50"
+                      {p.paidAt && (
+                        <span className="ml-2 text-muted-foreground">
+                          {new Date(p.paidAt).toLocaleDateString()}
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {p.status === PaymentStatus.PENDING && (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className="h-7"
+                          onClick={() => completeMutation.mutate(p.id)}
+                          disabled={completeMutation.isPending}
+                        >
+                          {completing ? 'Saving…' : 'Mark as completed'}
+                        </Button>
+                      )}
+                      <Badge
+                        variant="secondary"
+                        className={cn('font-medium', PAYMENT_STATUS_STYLES[p.status])}
                       >
-                        {completing ? 'Saving…' : 'Mark as completed'}
-                      </button>
-                    )}
-                    <span
-                      className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${PAYMENT_STATUS_STYLES[p.status]}`}
-                    >
-                      {PAYMENT_STATUS_LABELS[p.status]}
-                    </span>
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
-        </>
-      )}
-    </section>
+                        {PAYMENT_STATUS_LABELS[p.status]}
+                      </Badge>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          </>
+        )}
+      </CardContent>
+    </Card>
   );
 }

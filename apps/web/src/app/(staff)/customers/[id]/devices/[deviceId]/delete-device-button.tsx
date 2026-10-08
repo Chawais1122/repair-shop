@@ -2,7 +2,10 @@
 
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
+import { AlertCircle } from 'lucide-react';
 import { clientFetch, ApiError } from '@/lib/api/client';
+import { ConfirmDeleteButton } from '@/components/shared/confirm-delete-button';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 interface Props {
   deviceId: string;
@@ -16,8 +19,6 @@ export function DeleteDeviceButton({ deviceId, customerId, deviceLabel }: Props)
   const [pending, setPending] = useState(false);
 
   const handleDelete = async () => {
-    if (!confirm(`Delete ${deviceLabel}? This cannot be undone.`)) return;
-
     setError('');
     setPending(true);
 
@@ -32,22 +33,19 @@ export function DeleteDeviceButton({ deviceId, customerId, deviceLabel }: Props)
   };
 
   return (
-    <div>
+    <div className="flex flex-col items-end gap-2">
+      <ConfirmDeleteButton
+        title={`Delete ${deviceLabel}?`}
+        description="This cannot be undone."
+        pending={pending}
+        onConfirm={handleDelete}
+      />
       {error && (
-        <div
-          role="alert"
-          className="mb-2 rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700"
-        >
-          {error}
-        </div>
+        <Alert variant="destructive" className="max-w-xs">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
       )}
-      <button
-        onClick={handleDelete}
-        disabled={pending}
-        className="inline-flex items-center rounded-md bg-red-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-red-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-600 disabled:cursor-not-allowed disabled:opacity-50"
-      >
-        {pending ? 'Deleting…' : 'Delete'}
-      </button>
     </div>
   );
 }

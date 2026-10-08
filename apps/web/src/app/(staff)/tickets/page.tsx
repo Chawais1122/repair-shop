@@ -1,7 +1,28 @@
 import Link from 'next/link';
+import { ChevronLeft, ChevronRight, Plus, Search, Ticket } from 'lucide-react';
+import { TicketStatus } from '@repair-shop/shared';
 import { getTickets } from '@/lib/api/tickets';
 import { TicketStatusBadge } from '@/components/shared/ticket-status-badge';
-import { TicketStatus } from '@repair-shop/shared';
+import { PageHeader } from '@/components/shared/page-header';
+import { EmptyState } from '@/components/shared/empty-state';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 
 interface PageProps {
   searchParams: Promise<{
@@ -11,8 +32,11 @@ interface PageProps {
   }>;
 }
 
+// Radix Select does not allow an empty-string item value, so "all" stands in for no filter
+const ALL_STATUSES = 'all';
+
 const STATUS_OPTIONS = [
-  { value: '', label: 'All Statuses' },
+  { value: ALL_STATUSES, label: 'All Statuses' },
   { value: TicketStatus.RECEIVED, label: 'Received' },
   { value: TicketStatus.DIAGNOSING, label: 'Diagnosing' },
   { value: TicketStatus.WAITING_APPROVAL, label: 'Waiting Approval' },
@@ -27,7 +51,10 @@ export default async function TicketsPage({ searchParams }: PageProps) {
   const params = await searchParams;
   const page = Number(params.page ?? 1);
   const search = params.search ?? '';
-  const status = params.status as TicketStatus | undefined;
+  const status =
+    params.status && params.status !== ALL_STATUSES
+      ? (params.status as TicketStatus)
+      : undefined;
 
   const { data: tickets, meta } = await getTickets({
     search: search || undefined,
@@ -51,159 +78,137 @@ export default async function TicketsPage({ searchParams }: PageProps) {
 
   return (
     <div>
-      <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-2xl font-semibold text-gray-900">Tickets</h1>
-        <Link
-          href="/tickets/new"
-          className="inline-flex items-center rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
-        >
-          New ticket
-        </Link>
-      </div>
+      <PageHeader
+        title="Tickets"
+        actions={
+          <Button asChild>
+            <Link href="/tickets/new">
+              <Plus />
+              New ticket
+            </Link>
+          </Button>
+        }
+      />
 
       <form method="GET" className="mb-5 flex flex-wrap items-center gap-2">
         <label htmlFor="ticket-search" className="sr-only">
           Search tickets
         </label>
-        <input
-          id="ticket-search"
-          type="text"
-          name="search"
-          defaultValue={search}
-          placeholder="Search by ticket # or customer…"
-          className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 sm:w-64"
-        />
+        <div className="relative w-full sm:w-64">
+          <Search
+            className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
+            aria-hidden="true"
+          />
+          <Input
+            id="ticket-search"
+            type="text"
+            name="search"
+            defaultValue={search}
+            placeholder="Search by ticket # or customer…"
+            className="bg-background pl-8"
+          />
+        </div>
         <label htmlFor="ticket-status" className="sr-only">
           Filter by status
         </label>
-        <select
-          id="ticket-status"
-          name="status"
-          defaultValue={status ?? ''}
-          className="rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-        >
-          {STATUS_OPTIONS.map((opt) => (
-            <option key={opt.value} value={opt.value}>
-              {opt.label}
-            </option>
-          ))}
-        </select>
-        <button
-          type="submit"
-          className="inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-300"
-        >
+        <Select name="status" defaultValue={status ?? ALL_STATUSES}>
+          <SelectTrigger id="ticket-status" className="w-full bg-background sm:w-48">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {STATUS_OPTIONS.map((opt) => (
+              <SelectItem key={opt.value} value={opt.value}>
+                {opt.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Button type="submit" variant="outline">
           Filter
-        </button>
+        </Button>
         {(search || status) && (
-          <Link
-            href="/tickets"
-            className="inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50"
-          >
-            Clear
-          </Link>
+          <Button asChild variant="ghost">
+            <Link href="/tickets">Clear</Link>
+          </Button>
         )}
       </form>
 
-      <div className="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm">
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-gray-500">
-                  Ticket #
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-gray-500">
-                  Customer
-                </th>
-                <th className="hidden px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-gray-500 sm:table-cell">
-                  Device
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-gray-500">
-                  Status
-                </th>
-                <th className="hidden px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-gray-500 md:table-cell">
-                  Technician
-                </th>
-                <th className="hidden px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-gray-500 lg:table-cell">
-                  Received
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100 bg-white">
-              {tickets.length === 0 ? (
-                <tr>
-                  <td colSpan={6} className="px-4 py-12 text-center">
-                    <p className="text-sm text-gray-500">
-                      {search || status
-                        ? 'No tickets match your filters.'
-                        : 'No tickets yet.'}
-                    </p>
-                    {!search && !status && (
-                      <Link
-                        href="/tickets/new"
-                        className="mt-2 inline-block text-sm font-medium text-indigo-600 hover:text-indigo-500"
-                      >
-                        Create first ticket →
-                      </Link>
+      {tickets.length === 0 ? (
+        <EmptyState
+          icon={<Ticket />}
+          message={search || status ? 'No tickets match your filters.' : 'No tickets yet.'}
+          actionLabel={search || status ? undefined : 'Create first ticket'}
+          actionHref={search || status ? undefined : '/tickets/new'}
+          className="bg-background"
+        />
+      ) : (
+        <Card>
+          <Table>
+            <TableHeader>
+              <TableRow className="hover:bg-transparent">
+                <TableHead className="px-4">Ticket #</TableHead>
+                <TableHead className="px-4">Customer</TableHead>
+                <TableHead className="hidden px-4 sm:table-cell">Device</TableHead>
+                <TableHead className="px-4">Status</TableHead>
+                <TableHead className="hidden px-4 md:table-cell">Technician</TableHead>
+                <TableHead className="hidden px-4 lg:table-cell">Received</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {tickets.map((ticket) => (
+                <TableRow key={ticket.id}>
+                  <TableCell className="px-4 font-medium">
+                    <Link
+                      href={`/tickets/${ticket.id}`}
+                      className="underline-offset-4 hover:underline"
+                    >
+                      {ticket.ticketNumber}
+                    </Link>
+                  </TableCell>
+                  <TableCell className="px-4">{ticket.customer.name}</TableCell>
+                  <TableCell className="hidden px-4 text-muted-foreground sm:table-cell">
+                    {ticket.device.brand} {ticket.device.model}
+                  </TableCell>
+                  <TableCell className="px-4">
+                    <TicketStatusBadge status={ticket.status} />
+                  </TableCell>
+                  <TableCell className="hidden px-4 md:table-cell">
+                    {ticket.assignedTo?.name ?? (
+                      <span className="text-muted-foreground">Unassigned</span>
                     )}
-                  </td>
-                </tr>
-              ) : (
-                tickets.map((ticket) => (
-                  <tr key={ticket.id} className="hover:bg-gray-50">
-                    <td className="px-4 py-3 text-sm font-medium">
-                      <Link
-                        href={`/tickets/${ticket.id}`}
-                        className="text-indigo-600 hover:text-indigo-800"
-                      >
-                        {ticket.ticketNumber}
-                      </Link>
-                    </td>
-                    <td className="px-4 py-3 text-sm text-gray-900">{ticket.customer.name}</td>
-                    <td className="hidden px-4 py-3 text-sm text-gray-600 sm:table-cell">
-                      {ticket.device.brand} {ticket.device.model}
-                    </td>
-                    <td className="px-4 py-3">
-                      <TicketStatusBadge status={ticket.status} />
-                    </td>
-                    <td className="hidden px-4 py-3 text-sm text-gray-600 md:table-cell">
-                      {ticket.assignedTo?.name ?? (
-                        <span className="text-gray-400">Unassigned</span>
-                      )}
-                    </td>
-                    <td className="hidden px-4 py-3 text-sm text-gray-500 lg:table-cell">
-                      {new Date(ticket.receivedAt).toLocaleDateString()}
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
+                  </TableCell>
+                  <TableCell className="hidden px-4 text-muted-foreground lg:table-cell">
+                    {new Date(ticket.receivedAt).toLocaleDateString()}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </Card>
+      )}
 
       {meta.total > meta.limit && (
-        <div className="mt-4 flex items-center justify-between text-sm text-gray-600">
+        <div className="mt-4 flex items-center justify-between text-sm text-muted-foreground">
           <span>
             Showing {(meta.page - 1) * meta.limit + 1}–
             {Math.min(meta.page * meta.limit, meta.total)} of {meta.total}
           </span>
           <div className="flex gap-2">
             {meta.page > 1 && (
-              <Link
-                href={`/tickets${buildQuery({ page: String(meta.page - 1) })}`}
-                className="inline-flex items-center rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
-              >
-                Previous
-              </Link>
+              <Button asChild variant="outline" size="sm">
+                <Link href={`/tickets${buildQuery({ page: String(meta.page - 1) })}`}>
+                  <ChevronLeft />
+                  Previous
+                </Link>
+              </Button>
             )}
             {meta.page * meta.limit < meta.total && (
-              <Link
-                href={`/tickets${buildQuery({ page: String(meta.page + 1) })}`}
-                className="inline-flex items-center rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
-              >
-                Next
-              </Link>
+              <Button asChild variant="outline" size="sm">
+                <Link href={`/tickets${buildQuery({ page: String(meta.page + 1) })}`}>
+                  Next
+                  <ChevronRight />
+                </Link>
+              </Button>
             )}
           </div>
         </div>

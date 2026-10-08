@@ -2,19 +2,30 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useForm } from 'react-hook-form';
+import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { AlertCircle, Loader2 } from 'lucide-react';
 import { clientFetch, ApiError } from '@/lib/api/client';
 import { updateTicketSchema, type UpdateTicketInput } from '@/lib/validation/ticket';
 import { Priority } from '@repair-shop/shared';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
+import { FieldError } from '@/components/shared/field-error';
 import type { Ticket } from '@/types/ticket';
 
 interface Props {
   ticket: Ticket;
 }
-
-const inputCls =
-  'mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500';
 
 // Empty number inputs would otherwise become NaN and fail validation silently
 const toOptionalNumber = (v: unknown): number | undefined =>
@@ -25,6 +36,7 @@ export function EditTicketForm({ ticket }: Props) {
   const [serverError, setServerError] = useState('');
   const {
     register,
+    control,
     handleSubmit,
     formState: { errors, isSubmitting },
   } = useForm<UpdateTicketInput>({
@@ -61,116 +73,92 @@ export function EditTicketForm({ ticket }: Props) {
   }
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
       {serverError && (
-        <div role="alert" className="rounded-md border border-red-200 bg-red-50 p-4 text-sm text-red-700">
-          {serverError}
-        </div>
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>{serverError}</AlertDescription>
+        </Alert>
       )}
 
-      <div>
-        <label htmlFor="priority" className="block text-sm font-medium text-gray-700">
-          Priority
-        </label>
-        <select id="priority" {...register('priority')} className={inputCls}>
-          {Object.values(Priority).map((p) => (
-            <option key={p} value={p}>
-              {p.charAt(0) + p.slice(1).toLowerCase()}
-            </option>
-          ))}
-        </select>
+      <div className="space-y-2">
+        <Label htmlFor="priority">Priority</Label>
+        <Controller
+          control={control}
+          name="priority"
+          render={({ field }) => (
+            <Select value={field.value} onValueChange={field.onChange}>
+              <SelectTrigger id="priority" onBlur={field.onBlur}>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {Object.values(Priority).map((p) => (
+                  <SelectItem key={p} value={p}>
+                    {p.charAt(0) + p.slice(1).toLowerCase()}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+        />
       </div>
 
-      <div>
-        <label htmlFor="reportedProblem" className="block text-sm font-medium text-gray-700">
-          Problem reported
-        </label>
-        <textarea
+      <div className="space-y-2">
+        <Label htmlFor="reportedProblem">Problem reported</Label>
+        <Textarea
           id="reportedProblem"
           {...register('reportedProblem')}
           rows={3}
-          className={inputCls}
+          aria-invalid={!!errors.reportedProblem}
         />
-        {errors.reportedProblem && (
-          <p role="alert" className="mt-1.5 text-xs text-red-600">
-            {errors.reportedProblem.message}
-          </p>
-        )}
+        <FieldError message={errors.reportedProblem?.message} />
       </div>
 
-      <div>
-        <label htmlFor="diagnosis" className="block text-sm font-medium text-gray-700">
-          Diagnosis
-        </label>
-        <textarea id="diagnosis" {...register('diagnosis')} rows={3} className={inputCls} />
+      <div className="space-y-2">
+        <Label htmlFor="diagnosis">Diagnosis</Label>
+        <Textarea id="diagnosis" {...register('diagnosis')} rows={3} />
       </div>
 
       <div className="grid grid-cols-2 gap-4">
-        <div>
-          <label htmlFor="estimatedCost" className="block text-sm font-medium text-gray-700">
-            Estimated cost ($)
-          </label>
-          <input
+        <div className="space-y-2">
+          <Label htmlFor="estimatedCost">Estimated cost ($)</Label>
+          <Input
             id="estimatedCost"
             type="number"
             step="0.01"
             min="0"
+            aria-invalid={!!errors.estimatedCost}
             {...register('estimatedCost', { setValueAs: toOptionalNumber })}
-            className={inputCls}
           />
-          {errors.estimatedCost && (
-            <p role="alert" className="mt-1.5 text-xs text-red-600">
-              {errors.estimatedCost.message}
-            </p>
-          )}
+          <FieldError message={errors.estimatedCost?.message} />
         </div>
-        <div>
-          <label htmlFor="finalCost" className="block text-sm font-medium text-gray-700">
-            Final cost ($)
-          </label>
-          <input
+        <div className="space-y-2">
+          <Label htmlFor="finalCost">Final cost ($)</Label>
+          <Input
             id="finalCost"
             type="number"
             step="0.01"
             min="0"
+            aria-invalid={!!errors.finalCost}
             {...register('finalCost', { setValueAs: toOptionalNumber })}
-            className={inputCls}
           />
-          {errors.finalCost && (
-            <p role="alert" className="mt-1.5 text-xs text-red-600">
-              {errors.finalCost.message}
-            </p>
-          )}
+          <FieldError message={errors.finalCost?.message} />
         </div>
       </div>
 
-      <div>
-        <label htmlFor="expectedCompletionAt" className="block text-sm font-medium text-gray-700">
-          Expected completion
-        </label>
-        <input
-          id="expectedCompletionAt"
-          type="date"
-          {...register('expectedCompletionAt')}
-          className={inputCls}
-        />
+      <div className="space-y-2">
+        <Label htmlFor="expectedCompletionAt">Expected completion</Label>
+        <Input id="expectedCompletionAt" type="date" {...register('expectedCompletionAt')} />
       </div>
 
-      <div className="flex justify-end gap-3 pt-1">
-        <button
-          type="button"
-          onClick={() => router.back()}
-          className="inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-300"
-        >
+      <div className="flex justify-end gap-3">
+        <Button type="button" variant="outline" onClick={() => router.back()}>
           Cancel
-        </button>
-        <button
-          type="submit"
-          disabled={isSubmitting}
-          className="inline-flex items-center rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:cursor-not-allowed disabled:opacity-50"
-        >
+        </Button>
+        <Button type="submit" disabled={isSubmitting}>
+          {isSubmitting && <Loader2 className="animate-spin" />}
           {isSubmitting ? 'Saving…' : 'Save changes'}
-        </button>
+        </Button>
       </div>
     </form>
   );

@@ -1,7 +1,9 @@
-import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { getTicket } from '@/lib/api/tickets';
 import { ApiError } from '@/lib/api/client';
+import { PageBreadcrumb } from '@/components/shared/page-breadcrumb';
+import { PageHeader } from '@/components/shared/page-header';
+import { Card, CardContent } from '@/components/ui/card';
 import { EditTicketForm } from './edit-ticket-form';
 
 interface PageProps {
@@ -21,23 +23,21 @@ export default async function EditTicketPage({ params }: PageProps) {
 
   return (
     <div className="mx-auto max-w-2xl">
-      <nav className="mb-6 flex items-center gap-1.5 text-sm text-gray-500" aria-label="Breadcrumb">
-        <Link href="/tickets" className="hover:text-indigo-600">
-          Tickets
-        </Link>
-        <span aria-hidden="true">/</span>
-        <Link href={`/tickets/${id}`} className="hover:text-indigo-600">
-          {ticket.ticketNumber}
-        </Link>
-        <span aria-hidden="true">/</span>
-        <span className="text-gray-900">Edit</span>
-      </nav>
+      <PageBreadcrumb
+        items={[
+          { label: 'Tickets', href: '/tickets' },
+          { label: ticket.ticketNumber, href: `/tickets/${id}` },
+          { label: 'Edit' },
+        ]}
+      />
 
-      <h1 className="mb-6 text-2xl font-semibold text-gray-900">Edit ticket</h1>
+      <PageHeader title="Edit ticket" />
 
-      <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-        <EditTicketForm ticket={ticket} />
-      </div>
+      <Card>
+        <CardContent className="pt-6">
+          <EditTicketForm ticket={ticket} />
+        </CardContent>
+      </Card>
     </div>
   );
 }

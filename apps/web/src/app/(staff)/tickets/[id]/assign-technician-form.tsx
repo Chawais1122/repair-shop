@@ -2,8 +2,23 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { AlertCircle, Loader2 } from 'lucide-react';
 import { clientFetch } from '@/lib/api/client';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import type { Technician } from '@/types/ticket';
+
+// Radix Select does not allow an empty-string item value
+const UNASSIGNED = 'unassigned';
 
 interface Props {
   ticketId: string;
@@ -13,7 +28,7 @@ interface Props {
 
 export function AssignTechnicianForm({ ticketId, currentAssignedId, technicians }: Props) {
   const router = useRouter();
-  const [assignedToId, setAssignedToId] = useState(currentAssignedId ?? '');
+  const [assignedToId, setAssignedToId] = useState(currentAssignedId ?? UNASSIGNED);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -25,7 +40,9 @@ export function AssignTechnicianForm({ ticketId, currentAssignedId, technicians 
       await clientFetch(`/tickets/${ticketId}/assign`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ assignedToId: assignedToId || undefined }),
+        body: JSON.stringify({
+          assignedToId: assignedToId === UNASSIGNED ? undefined : assignedToId,
+        }),
       });
       router.refresh();
     } catch (err) {
@@ -36,43 +53,42 @@ export function AssignTechnicianForm({ ticketId, currentAssignedId, technicians 
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <h2 className="text-sm font-semibold uppercase tracking-wide text-gray-500">
-        Technician
-      </h2>
+    <Card>
+      <CardHeader className="pb-3">
+        <CardTitle className="text-base">Technician</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {error && (
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
 
-      {error && (
-        <div role="alert" className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">
-          {error}
-        </div>
-      )}
+          <div className="space-y-2">
+            <Label htmlFor="assign-technician">Assigned to</Label>
+            <Select value={assignedToId} onValueChange={setAssignedToId}>
+              <SelectTrigger id="assign-technician">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={UNASSIGNED}>Unassigned</SelectItem>
+                {technicians.map((t) => (
+                  <SelectItem key={t.id} value={t.id}>
+                    {t.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
 
-      <div>
-        <label htmlFor="assign-technician" className="block text-sm font-medium text-gray-700">
-          Assigned to
-        </label>
-        <select
-          id="assign-technician"
-          value={assignedToId}
-          onChange={(e) => setAssignedToId(e.target.value)}
-          className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-        >
-          <option value="">Unassigned</option>
-          {technicians.map((t) => (
-            <option key={t.id} value={t.id}>
-              {t.name}
-            </option>
-          ))}
-        </select>
-      </div>
-
-      <button
-        type="submit"
-        disabled={loading}
-        className="inline-flex w-full items-center justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-300 disabled:cursor-not-allowed disabled:opacity-50"
-      >
-        {loading ? 'Saving…' : 'Save assignment'}
-      </button>
-    </form>
+          <Button type="submit" variant="outline" disabled={loading} className="w-full">
+            {loading && <Loader2 className="animate-spin" />}
+            {loading ? 'Saving…' : 'Save assignment'}
+          </Button>
+        </form>
+      </CardContent>
+    </Card>
   );
 }

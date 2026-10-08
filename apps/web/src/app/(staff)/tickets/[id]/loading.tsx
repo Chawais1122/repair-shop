@@ -1,46 +1,55 @@
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
+
 export default function TicketDetailLoading() {
   return (
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <div className="mb-2 h-4 w-32 animate-pulse rounded bg-gray-200" />
+        <Skeleton className="mb-2 h-4 w-32" />
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="h-8 w-28 animate-pulse rounded bg-gray-200" />
-            <div className="h-5 w-20 animate-pulse rounded-full bg-gray-200" />
+            <Skeleton className="h-8 w-28" />
+            <Skeleton className="h-5 w-20" />
           </div>
-          <div className="h-9 w-24 animate-pulse rounded bg-gray-200" />
+          <Skeleton className="h-9 w-28" />
         </div>
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         {/* Main column */}
         <div className="space-y-6 lg:col-span-2">
-          <div className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm">
-            <div className="mb-4 h-5 w-32 animate-pulse rounded bg-gray-200" />
-            <div className="grid grid-cols-2 gap-4">
-              {[...Array(6)].map((_, i) => (
-                <div key={i} className="space-y-1.5">
-                  <div className="h-3.5 w-20 animate-pulse rounded bg-gray-200" />
-                  <div className="h-4 w-28 animate-pulse rounded bg-gray-200" />
-                </div>
-              ))}
-            </div>
-          </div>
-          <div className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm">
-            <div className="mb-4 h-5 w-32 animate-pulse rounded bg-gray-200" />
-            <div className="space-y-3">
+          <Card>
+            <CardHeader>
+              <Skeleton className="h-5 w-32" />
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 gap-4">
+                {[...Array(6)].map((_, i) => (
+                  <div key={i} className="space-y-1.5">
+                    <Skeleton className="h-3.5 w-20" />
+                    <Skeleton className="h-4 w-28" />
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader>
+              <Skeleton className="h-5 w-32" />
+            </CardHeader>
+            <CardContent className="space-y-3">
               {[...Array(3)].map((_, i) => (
-                <div key={i} className="h-10 animate-pulse rounded bg-gray-100" />
+                <Skeleton key={i} className="h-10" />
               ))}
-            </div>
-          </div>
+            </CardContent>
+          </Card>
         </div>
 
         {/* Sidebar */}
         <div className="space-y-4">
           {[...Array(4)].map((_, i) => (
-            <div key={i} className="h-28 animate-pulse rounded-lg border border-gray-200 bg-white shadow-sm" />
+            <Skeleton key={i} className="h-32 rounded-xl" />
           ))}
         </div>
       </div>

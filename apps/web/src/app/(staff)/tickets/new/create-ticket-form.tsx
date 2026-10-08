@@ -2,18 +2,34 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useForm } from 'react-hook-form';
+import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import Link from 'next/link';
+import { AlertCircle, ArrowLeft, Check, ChevronRight, Loader2 } from 'lucide-react';
 import { clientFetch } from '@/lib/api/client';
 import { createTicketSchema, type CreateTicketInput } from '@/lib/validation/ticket';
 import { Priority } from '@repair-shop/shared';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Textarea } from '@/components/ui/textarea';
+import { FieldError } from '@/components/shared/field-error';
+import { cn } from '@/lib/utils';
 import type { Customer } from '@/types/customer';
 import type { Device } from '@/types/device';
 import type { PaginatedResponse } from '@repair-shop/shared';
 
-const inputCls =
-  'mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500';
+const STEPS = ['customer', 'device', 'details'] as const;
+const STEP_LABELS = { customer: 'Customer', device: 'Device', details: 'Details' };
 
 export function CreateTicketForm() {
   const router = useRouter();
@@ -30,11 +46,14 @@ export function CreateTicketForm() {
 
   const {
     register,
+    control,
     handleSubmit,
     setValue,
     formState: { errors, isSubmitting },
   } = useForm<CreateTicketInput>({
     resolver: zodResolver(createTicketSchema),
+    // Matches the API's default priority
+    defaultValues: { priority: Priority.NORMAL },
   });
 
   async function searchCustomers() {
@@ -90,37 +109,41 @@ export function CreateTicketForm() {
     }
   }
 
+  const currentIndex = STEPS.indexOf(step);
+
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
       <input type="hidden" {...register('customerId')} />
       <input type="hidden" {...register('deviceId')} />
 
       {/* Step indicator */}
-      <ol className="flex items-center gap-4 text-sm" aria-label="Form steps">
-        {(['customer', 'device', 'details'] as const).map((s, i) => {
-          const labels = { customer: 'Customer', device: 'Device', details: 'Details' };
-          const done = (step === 'device' && s === 'customer') ||
-            (step === 'details' && (s === 'customer' || s === 'device'));
-          const active = step === s;
+      <ol className="flex items-center gap-2 text-sm" aria-label="Form steps">
+        {STEPS.map((s, i) => {
+          const done = i < currentIndex;
+          const active = i === currentIndex;
           return (
             <li key={s} className="flex items-center gap-2">
               <span
-                className={`flex h-6 w-6 items-center justify-center rounded-full text-xs font-semibold ${
-                  done
-                    ? 'bg-indigo-600 text-white'
-                    : active
-                      ? 'border-2 border-indigo-600 text-indigo-600'
-                      : 'border border-gray-300 text-gray-400'
-                }`}
+                className={cn(
+                  'flex size-6 items-center justify-center rounded-full text-xs font-semibold',
+                  done && 'bg-primary text-primary-foreground',
+                  active && 'border-2 border-primary text-primary',
+                  !done && !active && 'border text-muted-foreground',
+                )}
               >
-                {done ? '✓' : i + 1}
+                {done ? <Check className="size-3.5" aria-hidden="true" /> : i + 1}
               </span>
               <span
-                className={`font-medium ${active ? 'text-gray-900' : done ? 'text-gray-500' : 'text-gray-400'}`}
+                className={cn(
+                  'font-medium',
+                  active ? 'text-foreground' : 'text-muted-foreground',
+                )}
               >
-                {labels[s]}
+                {STEP_LABELS[s]}
               </span>
-              {i < 2 && <span className="text-gray-300" aria-hidden="true">—</span>}
+              {i < STEPS.length - 1 && (
+                <ChevronRight className="size-4 text-muted-foreground" aria-hidden="true" />
+              )}
             </li>
           );
         })}
@@ -128,59 +151,61 @@ export function CreateTicketForm() {
 
       {/* Step 1: Customer */}
       {step === 'customer' && (
-        <div>
-          <h2 className="mb-4 text-base font-semibold text-gray-900">Select customer</h2>
+        <div className="space-y-3">
+          <h2 className="text-base font-semibold">Select customer</h2>
           <div className="flex gap-2">
             <label htmlFor="customer-search" className="sr-only">
               Search customers
             </label>
-            <input
+            <Input
               id="customer-search"
               type="text"
               value={customerSearch}
               onChange={(e) => setCustomerSearch(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), searchCustomers())}
               placeholder="Search by name or phone…"
-              className="flex-1 rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+              className="flex-1"
             />
-            <button
+            <Button
               type="button"
+              variant="outline"
               onClick={searchCustomers}
               disabled={loadingCustomers}
-              className="inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
             >
+              {loadingCustomers && <Loader2 className="animate-spin" />}
               {loadingCustomers ? 'Searching…' : 'Search'}
-            </button>
+            </Button>
           </div>
-          {errors.customerId && (
-            <p role="alert" className="mt-1.5 text-xs text-red-600">
-              {errors.customerId.message}
-            </p>
-          )}
+          <FieldError message={errors.customerId?.message} />
 
           {searchPerformed && (
-            <div className="mt-3 overflow-hidden rounded-md border border-gray-200">
+            <div className="overflow-hidden rounded-md border">
               {customers.length === 0 && !loadingCustomers ? (
                 <div className="p-6 text-center">
-                  <p className="text-sm text-gray-500">No customers found for &quot;{customerSearch}&quot;.</p>
-                  <Link
-                    href="/customers/new"
-                    className="mt-1.5 inline-block text-sm font-medium text-indigo-600 hover:text-indigo-500"
-                  >
-                    Add a new customer →
-                  </Link>
+                  <p className="text-sm text-muted-foreground">
+                    No customers found for &quot;{customerSearch}&quot;.
+                  </p>
+                  <Button asChild variant="link" size="sm">
+                    <Link href="/customers/new">Add a new customer →</Link>
+                  </Button>
                 </div>
               ) : (
-                <ul className="divide-y divide-gray-100">
+                <ul className="divide-y">
                   {customers.map((c) => (
                     <li key={c.id}>
                       <button
                         type="button"
                         onClick={() => selectCustomer(c)}
-                        className="w-full px-4 py-3 text-left hover:bg-gray-50 focus-visible:bg-gray-50 focus-visible:outline-none"
+                        className="flex w-full items-center justify-between px-4 py-3 text-left transition-colors hover:bg-accent focus-visible:bg-accent focus-visible:outline-none"
                       >
-                        <p className="text-sm font-medium text-gray-900">{c.name}</p>
-                        <p className="text-xs text-gray-500">{c.phone}</p>
+                        <span>
+                          <span className="block text-sm font-medium">{c.name}</span>
+                          <span className="block text-xs text-muted-foreground">{c.phone}</span>
+                        </span>
+                        <ChevronRight
+                          className="size-4 text-muted-foreground"
+                          aria-hidden="true"
+                        />
                       </button>
                     </li>
                   ))}
@@ -193,53 +218,57 @@ export function CreateTicketForm() {
 
       {/* Step 2: Device */}
       {step === 'device' && selectedCustomer && (
-        <div>
-          <div className="mb-4 flex items-center gap-3">
-            <button
+        <div className="space-y-3">
+          <div className="flex items-center gap-2">
+            <Button
               type="button"
+              variant="ghost"
+              size="sm"
               onClick={() => setStep('customer')}
-              className="text-sm text-indigo-600 hover:text-indigo-800"
             >
-              ← Back
-            </button>
-            <h2 className="text-base font-semibold text-gray-900">
+              <ArrowLeft />
+              Back
+            </Button>
+            <h2 className="text-base font-semibold">
               Select device for {selectedCustomer.name}
             </h2>
           </div>
-          {errors.deviceId && (
-            <p role="alert" className="mb-2 text-xs text-red-600">
-              {errors.deviceId.message}
-            </p>
-          )}
+          <FieldError message={errors.deviceId?.message} />
           {loadingDevices ? (
-            <div className="space-y-2 rounded-md border border-gray-200 p-4">
+            <div className="space-y-2 rounded-md border p-4">
               {[...Array(3)].map((_, i) => (
-                <div key={i} className="h-12 animate-pulse rounded bg-gray-100" />
+                <Skeleton key={i} className="h-12" />
               ))}
             </div>
           ) : devices.length === 0 ? (
-            <div className="rounded-lg border-2 border-dashed border-gray-200 p-8 text-center">
-              <p className="text-sm text-gray-500">No devices on record for this customer.</p>
-              <Link
-                href={`/customers/${selectedCustomer.id}/devices/new`}
-                className="mt-2 inline-block text-sm font-medium text-indigo-600 hover:text-indigo-500"
-              >
-                Add a device →
-              </Link>
+            <div className="rounded-lg border border-dashed p-8 text-center">
+              <p className="text-sm text-muted-foreground">
+                No devices on record for this customer.
+              </p>
+              <Button asChild variant="link" size="sm">
+                <Link href={`/customers/${selectedCustomer.id}/devices/new`}>
+                  Add a device →
+                </Link>
+              </Button>
             </div>
           ) : (
-            <ul className="divide-y divide-gray-100 overflow-hidden rounded-md border border-gray-200">
+            <ul className="divide-y overflow-hidden rounded-md border">
               {devices.map((d) => (
                 <li key={d.id}>
                   <button
                     type="button"
                     onClick={() => selectDevice(d)}
-                    className="w-full px-4 py-3 text-left hover:bg-gray-50 focus-visible:bg-gray-50 focus-visible:outline-none"
+                    className="flex w-full items-center justify-between px-4 py-3 text-left transition-colors hover:bg-accent focus-visible:bg-accent focus-visible:outline-none"
                   >
-                    <p className="text-sm font-medium text-gray-900">
-                      {d.brand} {d.model}
-                    </p>
-                    <p className="text-xs capitalize text-gray-500">{d.type.toLowerCase()}</p>
+                    <span>
+                      <span className="block text-sm font-medium">
+                        {d.brand} {d.model}
+                      </span>
+                      <span className="block text-xs capitalize text-muted-foreground">
+                        {d.type.toLowerCase()}
+                      </span>
+                    </span>
+                    <ChevronRight className="size-4 text-muted-foreground" aria-hidden="true" />
                   </button>
                 </li>
               ))}
@@ -250,103 +279,102 @@ export function CreateTicketForm() {
 
       {/* Step 3: Details */}
       {step === 'details' && selectedCustomer && selectedDevice && (
-        <div>
-          <div className="mb-4 flex items-center gap-3">
-            <button
-              type="button"
-              onClick={() => setStep('device')}
-              className="text-sm text-indigo-600 hover:text-indigo-800"
-            >
-              ← Back
-            </button>
-            <h2 className="text-base font-semibold text-gray-900">Ticket details</h2>
+        <div className="space-y-5">
+          <div className="flex items-center gap-2">
+            <Button type="button" variant="ghost" size="sm" onClick={() => setStep('device')}>
+              <ArrowLeft />
+              Back
+            </Button>
+            <h2 className="text-base font-semibold">Ticket details</h2>
           </div>
 
-          <div className="mb-5 rounded-md border border-gray-200 bg-gray-50 px-4 py-3 text-sm">
+          <div className="rounded-md border bg-muted/50 px-4 py-3 text-sm">
             <div className="flex items-center gap-1">
-              <span className="text-gray-500">Customer:</span>
-              <span className="font-medium text-gray-900">{selectedCustomer.name}</span>
+              <span className="text-muted-foreground">Customer:</span>
+              <span className="font-medium">{selectedCustomer.name}</span>
             </div>
             <div className="mt-1 flex items-center gap-1">
-              <span className="text-gray-500">Device:</span>
-              <span className="font-medium text-gray-900">
+              <span className="text-muted-foreground">Device:</span>
+              <span className="font-medium">
                 {selectedDevice.brand} {selectedDevice.model}
               </span>
             </div>
           </div>
 
           {(errors.customerId || errors.deviceId) && (
-            <div role="alert" className="mb-4 rounded-md border border-red-200 bg-red-50 p-4 text-sm text-red-700">
-              {errors.customerId?.message ?? errors.deviceId?.message}
-            </div>
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>
+                {errors.customerId?.message ?? errors.deviceId?.message}
+              </AlertDescription>
+            </Alert>
           )}
 
           {serverError && (
-            <div role="alert" className="mb-4 rounded-md border border-red-200 bg-red-50 p-4 text-sm text-red-700">
-              {serverError}
-            </div>
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>{serverError}</AlertDescription>
+            </Alert>
           )}
 
-          <div className="space-y-5">
-            <div>
-              <label htmlFor="priority" className="block text-sm font-medium text-gray-700">
-                Priority
-              </label>
-              <select id="priority" {...register('priority')} className={inputCls}>
-                {Object.values(Priority).map((p) => (
-                  <option key={p} value={p}>
-                    {p.charAt(0) + p.slice(1).toLowerCase()}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label htmlFor="reportedProblem" className="block text-sm font-medium text-gray-700">
-                Problem description <span className="text-red-500" aria-hidden="true">*</span>
-              </label>
-              <textarea
-                id="reportedProblem"
-                {...register('reportedProblem')}
-                rows={4}
-                placeholder="Describe the problem the customer reported…"
-                className={inputCls}
-              />
-              {errors.reportedProblem && (
-                <p role="alert" className="mt-1.5 text-xs text-red-600">
-                  {errors.reportedProblem.message}
-                </p>
+          <div className="space-y-2">
+            <Label htmlFor="priority">Priority</Label>
+            <Controller
+              control={control}
+              name="priority"
+              render={({ field }) => (
+                <Select value={field.value} onValueChange={field.onChange}>
+                  <SelectTrigger id="priority" onBlur={field.onBlur}>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Object.values(Priority).map((p) => (
+                      <SelectItem key={p} value={p}>
+                        {p.charAt(0) + p.slice(1).toLowerCase()}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               )}
-            </div>
+            />
+          </div>
 
-            <div>
-              <label htmlFor="expectedCompletionAt" className="block text-sm font-medium text-gray-700">
-                Expected completion <span className="text-gray-400">(optional)</span>
-              </label>
-              <input
-                id="expectedCompletionAt"
-                type="date"
-                {...register('expectedCompletionAt')}
-                className={inputCls}
-              />
-            </div>
+          <div className="space-y-2">
+            <Label htmlFor="reportedProblem">
+              Problem description{' '}
+              <span className="text-destructive" aria-hidden="true">
+                *
+              </span>
+            </Label>
+            <Textarea
+              id="reportedProblem"
+              {...register('reportedProblem')}
+              rows={4}
+              placeholder="Describe the problem the customer reported…"
+              aria-invalid={!!errors.reportedProblem}
+            />
+            <FieldError message={errors.reportedProblem?.message} />
+          </div>
 
-            <div className="flex justify-end gap-3 pt-1">
-              <button
-                type="button"
-                onClick={() => setStep('device')}
-                className="inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50"
-              >
-                Back
-              </button>
-              <button
-                type="submit"
-                disabled={isSubmitting}
-                className="inline-flex items-center rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                {isSubmitting ? 'Creating…' : 'Create ticket'}
-              </button>
-            </div>
+          <div className="space-y-2">
+            <Label htmlFor="expectedCompletionAt">
+              Expected completion <span className="text-muted-foreground">(optional)</span>
+            </Label>
+            <Input
+              id="expectedCompletionAt"
+              type="date"
+              {...register('expectedCompletionAt')}
+            />
+          </div>
+
+          <div className="flex justify-end gap-3">
+            <Button type="button" variant="outline" onClick={() => setStep('device')}>
+              Back
+            </Button>
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting && <Loader2 className="animate-spin" />}
+              {isSubmitting ? 'Creating…' : 'Create ticket'}
+            </Button>
           </div>
         </div>
       )}
