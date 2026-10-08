@@ -28,6 +28,9 @@
     --ring: 240 5.9% 10%;
     --radius: 0.5rem;
 
+    /* Data viz: validated categorical slot 1 (blue) */
+    --chart-1: #2a78d6;
+
     --sidebar-background: 0 0% 98%;
     --sidebar-foreground: 240 5.3% 26.1%;
     --sidebar-primary: 240 5.9% 10%;
@@ -57,6 +60,8 @@
     --border: 240 3.7% 15.9%;
     --input: 240 3.7% 15.9%;
     --ring: 240 4.9% 83.9%;
+
+    --chart-1: #3987e5;
 
     --sidebar-background: 240 5.9% 10%;
     --sidebar-foreground: 240 4.8% 95.9%;

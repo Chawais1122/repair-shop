@@ -28,6 +28,15 @@ type TicketWithRelations = Prisma.RepairTicketGetPayload<{
   include: typeof FULL_INCLUDE;
 }>;
 
+export interface RepairPeriodStats {
+  created: number;
+  completed: number;
+  cancelled: number;
+  /** Average hours from check-in to delivery for tickets delivered in the period. */
+  averageTurnaroundHours: number | null;
+  completedByTechnician: Map<string, number>;
+}
+
 @Injectable()
 export class TicketsService {
   private readonly logger = new Logger(TicketsService.name);
@@ -189,6 +198,41 @@ export class TicketsService {
     });
 
     return this.findOne(id);
+  }
+
+  async getRepairStats(from: Date, to: Date): Promise<RepairPeriodStats> {
+    const [created, closed] = await Promise.all([
+      this.prisma.repairTicket.count({ where: { createdAt: { gte: from, lt: to } } }),
+      this.prisma.repairTicket.findMany({
+        where: {
+          status: { in: [TicketStatus.DELIVERED, TicketStatus.CANCELLED] },
+          completedAt: { gte: from, lt: to },
+        },
+        select: { status: true, receivedAt: true, completedAt: true, assignedToId: true },
+      }),
+    ]);
+
+    const delivered = closed.filter((t) => t.status === TicketStatus.DELIVERED);
+    const completedByTechnician = new Map<string, number>();
+    let turnaroundMs = 0;
+    for (const t of delivered) {
+      turnaroundMs += t.completedAt!.getTime() - t.receivedAt.getTime();
+      if (t.assignedToId) {
+        completedByTechnician.set(
+          t.assignedToId,
+          (completedByTechnician.get(t.assignedToId) ?? 0) + 1,
+        );
+      }
+    }
+
+    const avgHours = delivered.length > 0 ? turnaroundMs / delivered.length / 3_600_000 : null;
+    return {
+      created,
+      completed: delivered.length,
+      cancelled: closed.length - delivered.length,
+      averageTurnaroundHours: avgHours === null ? null : Math.round(avgHours * 10) / 10,
+      completedByTechnician,
+    };
   }
 
   /** Called by invoicing: the invoice total becomes the ticket's final cost. */

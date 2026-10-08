@@ -74,6 +74,15 @@ export class UsersService {
     };
   }
 
+  /** All active staff with pay and target data, for internal reporting only. */
+  async findActiveForReports(): Promise<UserResponseDto[]> {
+    const users = await this.prisma.user.findMany({
+      where: { isActive: true },
+      orderBy: { name: 'asc' },
+    });
+    return users.map((u) => this.toResponseDto(u));
+  }
+
   async findOne(id: string, viewerRole: UserRole = UserRole.ADMIN): Promise<UserResponseDto> {
     const user = await this.findById(id);
     if (!user) throw new NotFoundException(`User ${id} not found`);

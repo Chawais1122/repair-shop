@@ -1,6 +1,7 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { Payment, Prisma } from '@prisma/client';
 import { PaymentMethod, PaymentStatus } from '@repair-shop/shared';
+import { dayKey } from '../common/utils/date-range';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreatePaymentDto } from './dto/create-payment.dto';
 import { PaymentResponseDto, PaymentSummaryDto } from './dto/payment-response.dto';
@@ -11,6 +12,12 @@ const ALLOWED_STATUS_TRANSITIONS: Record<PaymentStatus, PaymentStatus[]> = {
   [PaymentStatus.COMPLETED]: [PaymentStatus.REFUNDED],
   [PaymentStatus.REFUNDED]: [],
 };
+
+export interface CollectedPayments {
+  total: Prisma.Decimal;
+  byMethod: Array<{ method: PaymentMethod; total: Prisma.Decimal; count: number }>;
+  byDay: Map<string, Prisma.Decimal>;
+}
 
 export interface InvoicePaymentScope {
   invoiceId: string;
@@ -129,6 +136,33 @@ export class PaymentsService {
     });
 
     return this.toResponseDto(updated);
+  }
+
+  /** Money actually collected (completed payments by paid date), for reports. */
+  async getCollected(from: Date, to: Date): Promise<CollectedPayments> {
+    const payments = await this.prisma.payment.findMany({
+      where: { status: PaymentStatus.COMPLETED, paidAt: { gte: from, lt: to } },
+      select: { amount: true, method: true, paidAt: true },
+    });
+
+    const zero = new Prisma.Decimal(0);
+    let total = zero;
+    const methods = new Map<PaymentMethod, { total: Prisma.Decimal; count: number }>();
+    const byDay = new Map<string, Prisma.Decimal>();
+    for (const p of payments) {
+      const method = p.method as PaymentMethod;
+      total = total.plus(p.amount);
+      const m = methods.get(method) ?? { total: zero, count: 0 };
+      methods.set(method, { total: m.total.plus(p.amount), count: m.count + 1 });
+      const key = dayKey(p.paidAt!);
+      byDay.set(key, (byDay.get(key) ?? zero).plus(p.amount));
+    }
+
+    return {
+      total,
+      byMethod: [...methods.entries()].map(([method, v]) => ({ method, ...v })),
+      byDay,
+    };
   }
 
   // ─── Invoice support ────────────────────────────────────────────────────────

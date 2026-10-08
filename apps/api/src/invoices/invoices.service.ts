@@ -6,6 +6,7 @@ import {
   StockMovementReason,
   TicketStatus,
 } from '@repair-shop/shared';
+import { dayKey } from '../common/utils/date-range';
 import { CustomersService } from '../customers/customers.service';
 import { InventoryService } from '../inventory/inventory.service';
 import { PaymentsService } from '../payments/payments.service';
@@ -43,6 +44,26 @@ interface DraftLine {
 }
 
 const ZERO = new Prisma.Decimal(0);
+
+export interface SalesPeriodSummary {
+  invoiceCount: number;
+  /** Including tax. */
+  grossSales: Prisma.Decimal;
+  /** Subtotal minus discounts, before tax. */
+  netSales: Prisma.Decimal;
+  tax: Prisma.Decimal;
+  discounts: Prisma.Decimal;
+  /** Cost of the parts sold or used on billed repairs. */
+  costOfGoods: Prisma.Decimal;
+  netSalesByDay: Map<string, Prisma.Decimal>;
+  byEmployee: Map<string, { netSales: Prisma.Decimal; invoiceCount: number }>;
+  topProducts: Array<{
+    partId: string;
+    description: string;
+    quantity: number;
+    revenue: Prisma.Decimal;
+  }>;
+}
 
 @Injectable()
 export class InvoicesService {
@@ -325,6 +346,81 @@ export class InvoicesService {
     });
 
     return this.findOne(id);
+  }
+
+  /** Non-void invoices created in [from, to), aggregated for reports. */
+  async getSalesSummary(from: Date, to: Date, topLimit = 5): Promise<SalesPeriodSummary> {
+    const invoices = await this.prisma.invoice.findMany({
+      where: { status: { not: InvoiceStatus.VOID }, createdAt: { gte: from, lt: to } },
+      select: {
+        total: true,
+        subtotal: true,
+        discount: true,
+        taxAmount: true,
+        createdAt: true,
+        createdById: true,
+        items: {
+          select: {
+            partId: true,
+            description: true,
+            quantity: true,
+            unitPrice: true,
+            unitCost: true,
+          },
+        },
+      },
+    });
+
+    const summary: SalesPeriodSummary = {
+      invoiceCount: invoices.length,
+      grossSales: ZERO,
+      netSales: ZERO,
+      tax: ZERO,
+      discounts: ZERO,
+      costOfGoods: ZERO,
+      netSalesByDay: new Map(),
+      byEmployee: new Map(),
+      topProducts: [],
+    };
+    const products = new Map<string, SalesPeriodSummary['topProducts'][number]>();
+
+    for (const inv of invoices) {
+      const net = inv.subtotal.minus(inv.discount);
+      summary.grossSales = summary.grossSales.plus(inv.total);
+      summary.netSales = summary.netSales.plus(net);
+      summary.tax = summary.tax.plus(inv.taxAmount);
+      summary.discounts = summary.discounts.plus(inv.discount);
+
+      const key = dayKey(inv.createdAt);
+      summary.netSalesByDay.set(key, (summary.netSalesByDay.get(key) ?? ZERO).plus(net));
+
+      const emp = summary.byEmployee.get(inv.createdById) ?? { netSales: ZERO, invoiceCount: 0 };
+      summary.byEmployee.set(inv.createdById, {
+        netSales: emp.netSales.plus(net),
+        invoiceCount: emp.invoiceCount + 1,
+      });
+
+      for (const item of inv.items) {
+        summary.costOfGoods = summary.costOfGoods.plus(item.unitCost.times(item.quantity));
+        if (!item.partId) continue;
+        const prod = products.get(item.partId) ?? {
+          partId: item.partId,
+          description: item.description,
+          quantity: 0,
+          revenue: ZERO,
+        };
+        products.set(item.partId, {
+          ...prod,
+          quantity: prod.quantity + item.quantity,
+          revenue: prod.revenue.plus(item.unitPrice.times(item.quantity)),
+        });
+      }
+    }
+
+    summary.topProducts = [...products.values()]
+      .sort((a, b) => b.revenue.comparedTo(a.revenue))
+      .slice(0, topLimit);
+    return summary;
   }
 
   computeTotals(

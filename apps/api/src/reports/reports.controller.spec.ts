@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ReportsController } from './reports.controller';
 import { ReportsService } from './reports.service';
+import { MetricsService } from './metrics.service';
 import { DashboardResponseDto } from './dto/dashboard-response.dto';
 import { TicketStatus } from '@repair-shop/shared';
 
@@ -25,7 +26,10 @@ describe('ReportsController', () => {
 
     const module: TestingModule = await Test.createTestingModule({
       controllers: [ReportsController],
-      providers: [{ provide: ReportsService, useValue: service }],
+      providers: [
+        { provide: ReportsService, useValue: service },
+        { provide: MetricsService, useValue: { getMetrics: jest.fn() } },
+      ],
     }).compile();
 
     controller = module.get<ReportsController>(ReportsController);

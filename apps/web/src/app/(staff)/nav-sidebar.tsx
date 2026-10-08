@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useState } from 'react';
 import {
+  BarChart3,
   ClipboardList,
   Clock,
   IdCard,
@@ -40,6 +41,7 @@ const NAV_SECTIONS: Array<{ title?: string; items: NavItem[] }> = [
       { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
       { href: '/tickets', label: 'Tickets', icon: Ticket },
       { href: '/customers', label: 'Customers', icon: Users },
+      { href: '/reports', label: 'Reports', icon: BarChart3, roles: ['ADMIN'] },
     ],
   },
   {
