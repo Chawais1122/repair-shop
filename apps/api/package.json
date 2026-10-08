@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "build:shared": "tsc -p ../../packages/shared/tsconfig.json",
-    "start:dev": "pnpm build:shared && nest start --watch",
+    "dev": "pnpm build:shared && nest start --watch",
     "start:debug": "pnpm build:shared && nest start --debug --watch",
     "build": "pnpm build:shared && nest build",
     "start:prod": "node dist/main",

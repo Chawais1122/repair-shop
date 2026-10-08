@@ -15,7 +15,7 @@ async function bootstrap(): Promise<void> {
   app.setGlobalPrefix('api');
 
   app.enableCors({
-    origin: configService.get<string>('CORS_ORIGIN', 'http://localhost:3000'),
+    origin: true,
     credentials: true,
   });
 
