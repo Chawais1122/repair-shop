@@ -21,6 +21,7 @@ export interface Ticket {
   receivedAt: string;
   expectedCompletionAt: string | null;
   completedAt: string | null;
+  invoicedAt: string | null;
   customer: { id: string; name: string; phone: string };
   device: { id: string; brand: string; model: string; type: DeviceType };
   assignedTo: { id: string; name: string } | null;

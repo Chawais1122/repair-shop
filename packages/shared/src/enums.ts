@@ -58,3 +58,10 @@ export enum StockMovementReason {
   SALE_VOID = 'SALE_VOID',
   ADJUSTMENT = 'ADJUSTMENT',
 }
+
+export enum InvoiceStatus {
+  UNPAID = 'UNPAID',
+  PARTIALLY_PAID = 'PARTIALLY_PAID',
+  PAID = 'PAID',
+  VOID = 'VOID',
+}

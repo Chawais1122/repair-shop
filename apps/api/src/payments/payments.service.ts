@@ -12,6 +12,12 @@ const ALLOWED_STATUS_TRANSITIONS: Record<PaymentStatus, PaymentStatus[]> = {
   [PaymentStatus.REFUNDED]: [],
 };
 
+export interface InvoicePaymentScope {
+  invoiceId: string;
+  /** Set for ticket invoices so earlier ticket deposits count toward the balance. */
+  ticketId: string | null;
+}
+
 @Injectable()
 export class PaymentsService {
   constructor(private readonly prisma: PrismaService) {}
@@ -49,9 +55,12 @@ export class PaymentsService {
   async create(ticketId: string, dto: CreatePaymentDto): Promise<PaymentResponseDto> {
     const ticket = await this.prisma.repairTicket.findUnique({
       where: { id: ticketId },
-      select: { id: true, finalCost: true, estimatedCost: true },
+      select: { id: true, finalCost: true, estimatedCost: true, invoicedAt: true },
     });
     if (!ticket) throw new NotFoundException(`Ticket ${ticketId} not found`);
+    if (ticket.invoicedAt) {
+      throw new BadRequestException('This ticket has been invoiced. Take payment on the invoice.');
+    }
 
     const status = dto.status ?? PaymentStatus.COMPLETED;
 
@@ -77,8 +86,15 @@ export class PaymentsService {
   }
 
   async update(id: string, dto: UpdatePaymentDto): Promise<PaymentResponseDto> {
-    const payment = await this.prisma.payment.findUnique({ where: { id } });
+    const payment = await this.prisma.payment.findUnique({
+      where: { id },
+      include: { ticket: { select: { invoicedAt: true } } },
+    });
     if (!payment) throw new NotFoundException(`Payment ${id} not found`);
+    // Invoice balances are derived from these payments, so the invoice owns their changes
+    if (payment.invoiceId || payment.ticket?.invoicedAt) {
+      throw new BadRequestException('Manage this payment from its invoice.');
+    }
 
     const currentStatus = payment.status as PaymentStatus;
     if (dto.status !== undefined && dto.status !== currentStatus) {
@@ -88,7 +104,7 @@ export class PaymentsService {
         );
       }
 
-      if (dto.status === PaymentStatus.COMPLETED) {
+      if (dto.status === PaymentStatus.COMPLETED && payment.ticketId) {
         const ticket = await this.prisma.repairTicket.findUnique({
           where: { id: payment.ticketId },
           select: { id: true, finalCost: true, estimatedCost: true },
@@ -113,6 +129,84 @@ export class PaymentsService {
     });
 
     return this.toResponseDto(updated);
+  }
+
+  // ─── Invoice support ────────────────────────────────────────────────────────
+  // An invoice's payments are those recorded against it plus, for a ticket invoice,
+  // deposits taken on the ticket before it was invoiced.
+
+  async sumCompletedForInvoice(
+    scope: InvoicePaymentScope,
+    client: Prisma.TransactionClient = this.prisma,
+  ): Promise<Prisma.Decimal> {
+    const result = await client.payment.aggregate({
+      where: { ...this.invoiceScopeWhere(scope), status: PaymentStatus.COMPLETED },
+      _sum: { amount: true },
+    });
+    return result._sum.amount ?? new Prisma.Decimal(0);
+  }
+
+  async listForInvoice(
+    scope: InvoicePaymentScope,
+    client: Prisma.TransactionClient = this.prisma,
+  ): Promise<PaymentResponseDto[]> {
+    const payments = await client.payment.findMany({
+      where: this.invoiceScopeWhere(scope),
+      orderBy: { createdAt: 'asc' },
+    });
+    return payments.map((p) => this.toResponseDto(p));
+  }
+
+  async findInInvoiceScope(
+    paymentId: string,
+    scope: InvoicePaymentScope,
+    client: Prisma.TransactionClient = this.prisma,
+  ): Promise<PaymentResponseDto> {
+    const payment = await client.payment.findFirst({
+      where: { id: paymentId, ...this.invoiceScopeWhere(scope) },
+    });
+    if (!payment) throw new NotFoundException(`Payment ${paymentId} not found on this invoice`);
+    return this.toResponseDto(payment);
+  }
+
+  async recordInvoicePayment(
+    tx: Prisma.TransactionClient,
+    input: {
+      invoiceId: string;
+      ticketId: string | null;
+      amount: Prisma.Decimal;
+      method: PaymentMethod;
+      transactionId?: string;
+      notes?: string;
+    },
+  ): Promise<PaymentResponseDto> {
+    const payment = await tx.payment.create({
+      data: {
+        invoiceId: input.invoiceId,
+        ticketId: input.ticketId,
+        amount: input.amount,
+        method: input.method,
+        status: PaymentStatus.COMPLETED,
+        transactionId: input.transactionId ?? null,
+        notes: input.notes ?? null,
+        paidAt: new Date(),
+      },
+    });
+    return this.toResponseDto(payment);
+  }
+
+  async markRefunded(tx: Prisma.TransactionClient, paymentId: string): Promise<void> {
+    const { count } = await tx.payment.updateMany({
+      where: { id: paymentId, status: PaymentStatus.COMPLETED },
+      data: { status: PaymentStatus.REFUNDED },
+    });
+    if (count === 0) throw new BadRequestException('Only completed payments can be refunded');
+  }
+
+  private invoiceScopeWhere(scope: InvoicePaymentScope): Prisma.PaymentWhereInput {
+    return scope.ticketId
+      ? { OR: [{ invoiceId: scope.invoiceId }, { ticketId: scope.ticketId, invoiceId: null }] }
+      : { invoiceId: scope.invoiceId };
   }
 
   private async assertWithinRemainingBalance(
@@ -141,6 +235,7 @@ export class PaymentsService {
     return {
       id: payment.id,
       ticketId: payment.ticketId,
+      invoiceId: payment.invoiceId,
       amount: payment.amount.toString(),
       method: payment.method as PaymentMethod,
       status: payment.status as PaymentStatus,

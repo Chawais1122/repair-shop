@@ -129,6 +129,16 @@ describe('TicketItemsService', () => {
       ).rejects.toThrow(BadRequestException);
     });
 
+    it('locks items once the ticket is invoiced', async () => {
+      prisma.repairTicket.findUnique.mockResolvedValue({
+        status: TicketStatus.READY,
+        invoicedAt: new Date(),
+      });
+      await expect(
+        service.add('ticket-1', { description: 'Labor', quantity: 1, unitPrice: 10 }, 'user-1'),
+      ).rejects.toThrow(BadRequestException);
+    });
+
     it('locks items on delivered tickets', async () => {
       prisma.repairTicket.findUnique.mockResolvedValue({ status: TicketStatus.DELIVERED });
       await expect(

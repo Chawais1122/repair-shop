@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -29,6 +30,8 @@ import type { Payment, PaymentSummary } from '@/types/payment';
 interface Props {
   ticketId: string;
   initialSummary: PaymentSummary;
+  /** Once a ticket is invoiced, payments are taken on the invoice instead. */
+  invoice?: { id: string; invoiceNumber: string } | null;
 }
 
 const PAYMENT_METHOD_LABELS: Record<PaymentMethod, string> = {
@@ -49,7 +52,7 @@ const PAYMENT_STATUS_LABELS: Record<PaymentStatus, string> = {
   [PaymentStatus.REFUNDED]: 'Refunded',
 };
 
-export function PaymentSection({ ticketId, initialSummary }: Props) {
+export function PaymentSection({ ticketId, initialSummary, invoice = null }: Props) {
   const [showForm, setShowForm] = useState(false);
   const queryClient = useQueryClient();
 
@@ -109,7 +112,7 @@ export function PaymentSection({ ticketId, initialSummary }: Props) {
     <Card>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
         <CardTitle className="text-base">Payments</CardTitle>
-        {!summary.isFullyPaid && (
+        {!summary.isFullyPaid && !invoice && (
           <Button variant="outline" size="sm" onClick={() => setShowForm((v) => !v)}>
             {!showForm && <Plus />}
             {showForm ? 'Cancel' : 'Add payment'}
@@ -118,6 +121,19 @@ export function PaymentSection({ ticketId, initialSummary }: Props) {
       </CardHeader>
 
       <CardContent className="space-y-4">
+        {invoice && (
+          <p className="rounded-lg border bg-muted/40 p-3 text-sm">
+            Billed on{' '}
+            <Link
+              href={`/invoices/${invoice.id}`}
+              className="font-medium underline-offset-4 hover:underline"
+            >
+              {invoice.invoiceNumber}
+            </Link>
+            . Take payments on the invoice.
+          </p>
+        )}
+
         {/* Summary */}
         <dl className="grid grid-cols-2 gap-x-4 gap-y-3 rounded-lg bg-muted/50 p-4 text-sm">
           <div>

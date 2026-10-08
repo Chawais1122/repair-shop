@@ -55,6 +55,13 @@ enum PaymentStatus {
   REFUNDED
 }
 
+enum InvoiceStatus {
+  UNPAID
+  PARTIALLY_PAID
+  PAID
+  VOID
+}
+
 enum PurchaseOrderStatus {
   DRAFT
   ORDERED
@@ -90,6 +97,8 @@ model User {
   ticketItems     TicketItem[]
   purchaseOrders  PurchaseOrder[]
   stockMovements  StockMovement[]
+  invoices        Invoice[]             @relation("InvoiceCreatedBy")
+  voidedInvoices  Invoice[]             @relation("InvoiceVoidedBy")
 
   @@index([email])
   @@index([role])
@@ -106,8 +115,9 @@ model Customer {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  devices Device[]
-  tickets RepairTicket[]
+  devices  Device[]
+  tickets  RepairTicket[]
+  invoices Invoice[]
 
   @@index([name])
   @@index([phone])
@@ -153,6 +163,8 @@ model RepairTicket {
   receivedAt           DateTime     @default(now())
   expectedCompletionAt DateTime?
   completedAt          DateTime?
+  // Set while a non-void invoice exists; locks items and routes payments to the invoice.
+  invoicedAt           DateTime?
   createdAt            DateTime     @default(now())
   updatedAt            DateTime     @updatedAt
 
@@ -165,6 +177,7 @@ model RepairTicket {
   repairNotes   RepairNote[]
   payments      Payment[]
   items         TicketItem[]
+  invoices      Invoice[]
 
   @@index([status])
   @@index([customerId])
@@ -211,9 +224,11 @@ model RepairNote {
   @@map("repair_notes")
 }
 
+// A payment belongs to a ticket (deposit), an invoice, or both (paying a ticket's invoice).
 model Payment {
   id            String        @id @default(cuid())
-  ticketId      String
+  ticketId      String?
+  invoiceId     String?
   amount        Decimal       @db.Decimal(10, 2)
   method        PaymentMethod
   status        PaymentStatus @default(PENDING)
@@ -224,10 +239,13 @@ model Payment {
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
 
-  ticket RepairTicket @relation(fields: [ticketId], references: [id], onDelete: Restrict)
+  ticket  RepairTicket? @relation(fields: [ticketId], references: [id], onDelete: Restrict)
+  invoice Invoice?      @relation(fields: [invoiceId], references: [id], onDelete: Restrict)
 
   @@index([ticketId])
+  @@index([invoiceId])
   @@index([status])
+  @@index([paidAt])
   @@map("payments")
 }
 
@@ -271,6 +289,7 @@ model Part {
   ticketItems        TicketItem[]
   purchaseOrderItems PurchaseOrderItem[]
   stockMovements     StockMovement[]
+  invoiceItems       InvoiceItem[]
 
   @@index([name])
   @@index([category])
@@ -357,4 +376,62 @@ model PurchaseOrderItem {
   @@index([purchaseOrderId])
   @@index([partId])
   @@map("purchase_order_items")
+}
+
+// ─── Sales ────────────────────────────────────────────────────────────────────
+
+// Totals are stored at creation so historical invoices never change when prices do.
+model Invoice {
+  id            String        @id @default(cuid())
+  invoiceNumber String        @unique
+  customerId    String?
+  ticketId      String?
+  status        InvoiceStatus @default(UNPAID)
+  subtotal      Decimal       @db.Decimal(10, 2)
+  discount      Decimal       @default(0) @db.Decimal(10, 2)
+  // Percentage, e.g. 8.25
+  taxRate       Decimal       @default(0) @db.Decimal(5, 2)
+  taxAmount     Decimal       @default(0) @db.Decimal(10, 2)
+  total         Decimal       @db.Decimal(10, 2)
+  notes         String?
+  createdById   String
+  voidedAt      DateTime?
+  voidedById    String?
+  voidReason    String?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  customer  Customer?     @relation(fields: [customerId], references: [id], onDelete: Restrict)
+  ticket    RepairTicket? @relation(fields: [ticketId], references: [id], onDelete: Restrict)
+  createdBy User          @relation("InvoiceCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
+  voidedBy  User?         @relation("InvoiceVoidedBy", fields: [voidedById], references: [id], onDelete: Restrict)
+  items     InvoiceItem[]
+  payments  Payment[]
+
+  @@index([customerId])
+  @@index([ticketId])
+  @@index([status])
+  @@index([createdAt])
+  @@index([createdById])
+  @@map("invoices")
+}
+
+model InvoiceItem {
+  id          String   @id @default(cuid())
+  invoiceId   String
+  partId      String?
+  // True when copied from the ticket's parts & labor (stock was already taken when used).
+  fromTicket  Boolean  @default(false)
+  description String
+  quantity    Int
+  unitPrice   Decimal  @db.Decimal(10, 2)
+  unitCost    Decimal  @default(0) @db.Decimal(10, 2)
+  createdAt   DateTime @default(now())
+
+  invoice Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  part    Part?   @relation(fields: [partId], references: [id], onDelete: SetNull)
+
+  @@index([invoiceId])
+  @@index([partId])
+  @@map("invoice_items")
 }

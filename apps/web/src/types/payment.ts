@@ -2,7 +2,8 @@ import { PaymentMethod, PaymentStatus } from '@repair-shop/shared';
 
 export interface Payment {
   id: string;
-  ticketId: string;
+  ticketId: string | null;
+  invoiceId: string | null;
   amount: string;
   method: PaymentMethod;
   status: PaymentStatus;

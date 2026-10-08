@@ -279,20 +279,18 @@ describe('PaymentsService', () => {
       });
       prisma.payment.findMany.mockResolvedValue([{ amount: new Prisma.Decimal('50.00') }]);
 
-      await expect(
-        service.update('pay-1', { status: PaymentStatus.COMPLETED }),
-      ).rejects.toThrow(BadRequestException);
+      await expect(service.update('pay-1', { status: PaymentStatus.COMPLETED })).rejects.toThrow(
+        BadRequestException,
+      );
       expect(prisma.payment.update).not.toHaveBeenCalled();
     });
 
     it('throws BadRequestException on a disallowed status transition', async () => {
-      prisma.payment.findUnique.mockResolvedValue(
-        makePayment({ status: PaymentStatus.REFUNDED }),
-      );
+      prisma.payment.findUnique.mockResolvedValue(makePayment({ status: PaymentStatus.REFUNDED }));
 
-      await expect(
-        service.update('pay-1', { status: PaymentStatus.PENDING }),
-      ).rejects.toThrow(BadRequestException);
+      await expect(service.update('pay-1', { status: PaymentStatus.PENDING })).rejects.toThrow(
+        BadRequestException,
+      );
       expect(prisma.payment.update).not.toHaveBeenCalled();
     });
 
@@ -300,6 +298,45 @@ describe('PaymentsService', () => {
       prisma.payment.findUnique.mockResolvedValue(null);
 
       await expect(service.update('missing', {})).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  // ─── Invoice integration ──────────────────────────────────────────────────
+
+  describe('invoice rules', () => {
+    it('rejects ticket payments once the ticket is invoiced', async () => {
+      prisma.repairTicket.findUnique.mockResolvedValue({
+        id: 'ticket-1',
+        finalCost: new Prisma.Decimal('100.00'),
+        estimatedCost: null,
+        invoicedAt: new Date(),
+      });
+
+      await expect(
+        service.create('ticket-1', { amount: 10, method: PaymentMethod.CASH }),
+      ).rejects.toThrow(BadRequestException);
+      expect(prisma.payment.create).not.toHaveBeenCalled();
+    });
+
+    it('refuses direct edits to payments that belong to an invoice', async () => {
+      prisma.payment.findUnique.mockResolvedValue({ ...makePayment(), invoiceId: 'inv-1' });
+
+      await expect(service.update('pay-1', { status: PaymentStatus.REFUNDED })).rejects.toThrow(
+        BadRequestException,
+      );
+      expect(prisma.payment.update).not.toHaveBeenCalled();
+    });
+
+    it('refuses direct edits to deposits on an invoiced ticket', async () => {
+      prisma.payment.findUnique.mockResolvedValue({
+        ...makePayment(),
+        invoiceId: null,
+        ticket: { invoicedAt: new Date() },
+      });
+
+      await expect(service.update('pay-1', { status: PaymentStatus.REFUNDED })).rejects.toThrow(
+        BadRequestException,
+      );
     });
   });
 });

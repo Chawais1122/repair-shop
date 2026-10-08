@@ -120,7 +120,10 @@ export class TicketsService {
   }
 
   async update(id: string, dto: UpdateTicketDto): Promise<TicketResponseDto> {
-    await this.findOne(id);
+    const existing = await this.findOne(id);
+    if (existing.invoicedAt && dto.finalCost !== undefined) {
+      throw new BadRequestException('The final cost is set by the invoice and cannot be changed');
+    }
 
     const data: Prisma.RepairTicketUpdateInput = {
       ...(dto.priority !== undefined && { priority: dto.priority }),
@@ -188,6 +191,26 @@ export class TicketsService {
     return this.findOne(id);
   }
 
+  /** Called by invoicing: the invoice total becomes the ticket's final cost. */
+  async markInvoiced(
+    tx: Prisma.TransactionClient,
+    ticketId: string,
+    total: Prisma.Decimal,
+  ): Promise<void> {
+    const { count } = await tx.repairTicket.updateMany({
+      where: { id: ticketId, invoicedAt: null },
+      data: { invoicedAt: new Date(), finalCost: total },
+    });
+    if (count === 0) {
+      throw new BadRequestException('This ticket already has an active invoice');
+    }
+  }
+
+  /** Called when a ticket's invoice is voided so the ticket can be edited and invoiced again. */
+  async clearInvoiced(tx: Prisma.TransactionClient, ticketId: string): Promise<void> {
+    await tx.repairTicket.update({ where: { id: ticketId }, data: { invoicedAt: null } });
+  }
+
   private toResponseDto(ticket: TicketWithRelations): TicketResponseDto {
     return {
       id: ticket.id,
@@ -201,6 +224,7 @@ export class TicketsService {
       receivedAt: ticket.receivedAt,
       expectedCompletionAt: ticket.expectedCompletionAt,
       completedAt: ticket.completedAt,
+      invoicedAt: ticket.invoicedAt,
       customer: ticket.customer,
       device: {
         id: ticket.device.id,

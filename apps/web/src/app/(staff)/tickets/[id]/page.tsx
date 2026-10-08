@@ -1,9 +1,10 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { Pencil } from 'lucide-react';
+import { Pencil, ShoppingCart } from 'lucide-react';
 import { TicketStatus } from '@repair-shop/shared';
 import { getTicket, getTechnicians } from '@/lib/api/tickets';
 import { getTicketItems } from '@/lib/api/inventory';
+import { getTicketInvoice } from '@/lib/api/invoices';
 import { getPaymentSummary } from '@/lib/api/payments';
 import { ApiError } from '@/lib/api/client';
 import { TicketStatusBadge } from '@/components/shared/ticket-status-badge';
@@ -39,12 +40,16 @@ export default async function TicketDetailPage({ params }: PageProps) {
     throw err;
   }
 
-  const [technicians, paymentSummary, items] = await Promise.all([
+  const [technicians, paymentSummary, items, invoice] = await Promise.all([
     getTechnicians(),
     getPaymentSummary(id),
     getTicketItems(id),
+    ticket.invoicedAt ? getTicketInvoice(id) : Promise.resolve(null),
   ]);
-  const itemsLocked = [TicketStatus.DELIVERED, TicketStatus.CANCELLED].includes(ticket.status);
+  const itemsLocked =
+    Boolean(ticket.invoicedAt) ||
+    [TicketStatus.DELIVERED, TicketStatus.CANCELLED].includes(ticket.status);
+  const canCheckOut = !ticket.invoicedAt && ticket.status !== TicketStatus.CANCELLED;
 
   return (
     <div className="space-y-6">
@@ -59,12 +64,22 @@ export default async function TicketDetailPage({ params }: PageProps) {
             <h1 className="text-2xl font-semibold tracking-tight">{ticket.ticketNumber}</h1>
             <TicketStatusBadge status={ticket.status} />
           </div>
-          <Button asChild variant="outline">
-            <Link href={`/tickets/${id}/edit`}>
-              <Pencil />
-              Edit ticket
-            </Link>
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <Button asChild variant="outline">
+              <Link href={`/tickets/${id}/edit`}>
+                <Pencil />
+                Edit ticket
+              </Link>
+            </Button>
+            {canCheckOut && (
+              <Button asChild>
+                <Link href={`/pos?ticketId=${id}`}>
+                  <ShoppingCart />
+                  Check out
+                </Link>
+              </Button>
+            )}
+          </div>
         </div>
       </div>
 
@@ -185,7 +200,11 @@ export default async function TicketDetailPage({ params }: PageProps) {
 
           <UpdateStatusForm ticketId={ticket.id} currentStatus={ticket.status} />
 
-          <PaymentSection ticketId={ticket.id} initialSummary={paymentSummary} />
+          <PaymentSection
+            ticketId={ticket.id}
+            initialSummary={paymentSummary}
+            invoice={invoice ? { id: invoice.id, invoiceNumber: invoice.invoiceNumber } : null}
+          />
         </div>
       </div>
     </div>

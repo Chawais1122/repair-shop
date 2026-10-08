@@ -9,6 +9,8 @@ import {
   LogOut,
   Menu,
   Package,
+  ReceiptText,
+  ShoppingCart,
   Ticket,
   Truck,
   Users,
@@ -33,6 +35,13 @@ const NAV_SECTIONS: Array<{ title?: string; items: NavItem[] }> = [
       { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
       { href: '/tickets', label: 'Tickets', icon: Ticket },
       { href: '/customers', label: 'Customers', icon: Users },
+    ],
+  },
+  {
+    title: 'Sales',
+    items: [
+      { href: '/pos', label: 'Point of sale', icon: ShoppingCart },
+      { href: '/invoices', label: 'Invoices', icon: ReceiptText },
     ],
   },
   {

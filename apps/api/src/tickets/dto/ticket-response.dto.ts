@@ -21,6 +21,7 @@ export class TicketResponseDto {
   receivedAt!: Date;
   expectedCompletionAt!: Date | null;
   completedAt!: Date | null;
+  invoicedAt!: Date | null;
   customer!: { id: string; name: string; phone: string };
   device!: { id: string; brand: string; model: string; type: DeviceType };
   assignedTo!: { id: string; name: string } | null;

@@ -6,5 +6,6 @@ import { TicketPaymentsController } from './ticket-payments.controller';
 @Module({
   controllers: [TicketPaymentsController, PaymentsController],
   providers: [PaymentsService],
+  exports: [PaymentsService],
 })
 export class PaymentsModule {}

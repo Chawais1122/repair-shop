@@ -14,6 +14,7 @@ import { ReportsModule } from './reports/reports.module';
 import { SuppliersModule } from './suppliers/suppliers.module';
 import { InventoryModule } from './inventory/inventory.module';
 import { PurchaseOrdersModule } from './purchase-orders/purchase-orders.module';
+import { InvoicesModule } from './invoices/invoices.module';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import { TransformInterceptor } from './common/interceptors/transform.interceptor';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
@@ -34,6 +35,7 @@ import { RolesGuard } from './auth/guards/roles.guard';
     SuppliersModule,
     InventoryModule,
     PurchaseOrdersModule,
+    InvoicesModule,
   ],
   providers: [
     {

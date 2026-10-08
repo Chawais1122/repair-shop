@@ -13,6 +13,14 @@ const ITEM_INCLUDE = {
 
 type TicketItemWithRelations = Prisma.TicketItemGetPayload<{ include: typeof ITEM_INCLUDE }>;
 
+export interface BillableTicketItem {
+  partId: string | null;
+  description: string;
+  quantity: number;
+  unitPrice: Prisma.Decimal;
+  unitCost: Prisma.Decimal;
+}
+
 const LOCKED_STATUSES: TicketStatus[] = [TicketStatus.DELIVERED, TicketStatus.CANCELLED];
 
 @Injectable()
@@ -103,10 +111,24 @@ export class TicketItemsService {
     });
   }
 
-  private async getTicketOrThrow(ticketId: string): Promise<{ status: string }> {
+  /** Raw lines for billing. Invoices copy these so the invoice stays fixed if items change later. */
+  async getBillableItems(
+    ticketId: string,
+    client: Prisma.TransactionClient = this.prisma,
+  ): Promise<BillableTicketItem[]> {
+    return client.ticketItem.findMany({
+      where: { ticketId },
+      select: { partId: true, description: true, quantity: true, unitPrice: true, unitCost: true },
+      orderBy: { createdAt: 'asc' },
+    });
+  }
+
+  private async getTicketOrThrow(
+    ticketId: string,
+  ): Promise<{ status: string; invoicedAt: Date | null }> {
     const ticket = await this.prisma.repairTicket.findUnique({
       where: { id: ticketId },
-      select: { status: true },
+      select: { status: true, invoicedAt: true },
     });
     if (!ticket) throw new NotFoundException(`Ticket ${ticketId} not found`);
     return ticket;
@@ -116,6 +138,9 @@ export class TicketItemsService {
     const ticket = await this.getTicketOrThrow(ticketId);
     if (LOCKED_STATUSES.includes(ticket.status as TicketStatus)) {
       throw new BadRequestException(`Items cannot be changed on a ${ticket.status} ticket`);
+    }
+    if (ticket.invoicedAt) {
+      throw new BadRequestException('Items cannot be changed after the ticket is invoiced');
     }
   }
 
