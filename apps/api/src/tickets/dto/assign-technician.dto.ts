@@ -1,5 +1,5 @@
-import { IsOptional, IsUUID } from 'class-validator';
+import { IsNotEmpty, IsOptional, IsString } from 'class-validator';
 
 export class AssignTechnicianDto {
-  @IsUUID() @IsOptional() assignedToId?: string;
+  @IsString() @IsNotEmpty() @IsOptional() assignedToId?: string;
 }

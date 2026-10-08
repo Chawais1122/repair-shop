@@ -1,9 +1,10 @@
 'use client';
 
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { clientFetch } from '@/lib/api/client';
+import { clientFetch, ApiError } from '@/lib/api/client';
 import { updateTicketSchema, type UpdateTicketInput } from '@/lib/validation/ticket';
 import { Priority } from '@repair-shop/shared';
 import type { Ticket } from '@/types/ticket';
@@ -15,8 +16,13 @@ interface Props {
 const inputCls =
   'mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500';
 
+// Empty number inputs would otherwise become NaN and fail validation silently
+const toOptionalNumber = (v: unknown): number | undefined =>
+  v === '' || v === null || v === undefined ? undefined : Number(v);
+
 export function EditTicketForm({ ticket }: Props) {
   const router = useRouter();
+  const [serverError, setServerError] = useState('');
   const {
     register,
     handleSubmit,
@@ -36,17 +42,32 @@ export function EditTicketForm({ ticket }: Props) {
   });
 
   async function onSubmit(data: UpdateTicketInput) {
-    await clientFetch(`/tickets/${ticket.id}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data),
-    });
-    router.push(`/tickets/${ticket.id}`);
-    router.refresh();
+    setServerError('');
+    try {
+      await clientFetch(`/tickets/${ticket.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        // Empty date input yields '' which the API's IsDateString rejects
+        body: JSON.stringify({
+          ...data,
+          expectedCompletionAt: data.expectedCompletionAt || undefined,
+        }),
+      });
+      router.push(`/tickets/${ticket.id}`);
+      router.refresh();
+    } catch (err) {
+      setServerError(err instanceof ApiError ? err.message : 'Failed to update ticket');
+    }
   }
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+      {serverError && (
+        <div role="alert" className="rounded-md border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+          {serverError}
+        </div>
+      )}
+
       <div>
         <label htmlFor="priority" className="block text-sm font-medium text-gray-700">
           Priority
@@ -94,9 +115,14 @@ export function EditTicketForm({ ticket }: Props) {
             type="number"
             step="0.01"
             min="0"
-            {...register('estimatedCost', { valueAsNumber: true })}
+            {...register('estimatedCost', { setValueAs: toOptionalNumber })}
             className={inputCls}
           />
+          {errors.estimatedCost && (
+            <p role="alert" className="mt-1.5 text-xs text-red-600">
+              {errors.estimatedCost.message}
+            </p>
+          )}
         </div>
         <div>
           <label htmlFor="finalCost" className="block text-sm font-medium text-gray-700">
@@ -107,9 +133,14 @@ export function EditTicketForm({ ticket }: Props) {
             type="number"
             step="0.01"
             min="0"
-            {...register('finalCost', { valueAsNumber: true })}
+            {...register('finalCost', { setValueAs: toOptionalNumber })}
             className={inputCls}
           />
+          {errors.finalCost && (
+            <p role="alert" className="mt-1.5 text-xs text-red-600">
+              {errors.finalCost.message}
+            </p>
+          )}
         </div>
       </div>
 

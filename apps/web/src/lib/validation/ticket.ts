@@ -2,8 +2,8 @@ import { z } from 'zod';
 import { Priority, TicketStatus } from '@repair-shop/shared';
 
 export const createTicketSchema = z.object({
-  customerId: z.string().uuid('Select a valid customer'),
-  deviceId: z.string().uuid('Select a valid device'),
+  customerId: z.string().min(1, 'Select a customer'),
+  deviceId: z.string().min(1, 'Select a device'),
   priority: z.enum([
     Priority.LOW,
     Priority.NORMAL,

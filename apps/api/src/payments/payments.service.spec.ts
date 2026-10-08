@@ -251,6 +251,11 @@ describe('PaymentsService', () => {
       const pending = makePayment({ status: PaymentStatus.PENDING });
       pending.paidAt = null as unknown as Date;
       prisma.payment.findUnique.mockResolvedValue(pending);
+      prisma.repairTicket.findUnique.mockResolvedValue({
+        id: 'ticket-1',
+        finalCost: null,
+        estimatedCost: null,
+      });
       const updated = makePayment({ status: PaymentStatus.COMPLETED });
       prisma.payment.update.mockResolvedValue(updated);
 
@@ -261,6 +266,34 @@ describe('PaymentsService', () => {
           data: expect.objectContaining({ paidAt: expect.any(Date) }),
         }),
       );
+    });
+
+    it('throws BadRequestException when completing would exceed remaining balance', async () => {
+      prisma.payment.findUnique.mockResolvedValue(
+        makePayment({ status: PaymentStatus.PENDING, amount: new Prisma.Decimal('80.00') }),
+      );
+      prisma.repairTicket.findUnique.mockResolvedValue({
+        id: 'ticket-1',
+        finalCost: new Prisma.Decimal('100.00'),
+        estimatedCost: null,
+      });
+      prisma.payment.findMany.mockResolvedValue([{ amount: new Prisma.Decimal('50.00') }]);
+
+      await expect(
+        service.update('pay-1', { status: PaymentStatus.COMPLETED }),
+      ).rejects.toThrow(BadRequestException);
+      expect(prisma.payment.update).not.toHaveBeenCalled();
+    });
+
+    it('throws BadRequestException on a disallowed status transition', async () => {
+      prisma.payment.findUnique.mockResolvedValue(
+        makePayment({ status: PaymentStatus.REFUNDED }),
+      );
+
+      await expect(
+        service.update('pay-1', { status: PaymentStatus.PENDING }),
+      ).rejects.toThrow(BadRequestException);
+      expect(prisma.payment.update).not.toHaveBeenCalled();
     });
 
     it('throws NotFoundException when payment not found', async () => {

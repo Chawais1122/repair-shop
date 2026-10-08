@@ -76,7 +76,18 @@ export function PaymentSection({ ticketId, initialSummary }: Props) {
     },
   });
 
-  const formatAmount = (value: string | null) =>
+  const completeMutation = useMutation<Payment, Error, string>({
+    mutationFn: (paymentId) =>
+      clientFetch<{ data: Payment }>(`/payments/${paymentId}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ status: PaymentStatus.COMPLETED }),
+      }).then((r) => r.data),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['payments', ticketId] });
+    },
+  });
+
+  const formatAmount =(value: string | null) =>
     value !== null ? `$${parseFloat(value).toFixed(2)}` : '—';
 
   return (
@@ -217,26 +228,48 @@ export function PaymentSection({ ticketId, initialSummary }: Props) {
       {summary.payments.length === 0 ? (
         <p className="text-sm text-gray-400">No payments recorded yet.</p>
       ) : (
-        <ul className="divide-y divide-gray-100">
-          {summary.payments.map((p) => (
-            <li key={p.id} className="flex items-center justify-between py-2.5 text-sm">
-              <div>
-                <span className="font-medium text-gray-900">{formatAmount(p.amount)}</span>
-                <span className="ml-2 text-gray-500">{PAYMENT_METHOD_LABELS[p.method]}</span>
-                {p.paidAt && (
-                  <span className="ml-2 text-gray-400">
-                    {new Date(p.paidAt).toLocaleDateString()}
-                  </span>
-                )}
-              </div>
-              <span
-                className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${PAYMENT_STATUS_STYLES[p.status]}`}
-              >
-                {PAYMENT_STATUS_LABELS[p.status]}
-              </span>
-            </li>
-          ))}
-        </ul>
+        <>
+          {completeMutation.error && (
+            <div role="alert" className="mb-2 rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+              {completeMutation.error.message}
+            </div>
+          )}
+          <ul className="divide-y divide-gray-100">
+            {summary.payments.map((p) => {
+              const completing = completeMutation.isPending && completeMutation.variables === p.id;
+              return (
+                <li key={p.id} className="flex items-center justify-between gap-3 py-2.5 text-sm">
+                  <div>
+                    <span className="font-medium text-gray-900">{formatAmount(p.amount)}</span>
+                    <span className="ml-2 text-gray-500">{PAYMENT_METHOD_LABELS[p.method]}</span>
+                    {p.paidAt && (
+                      <span className="ml-2 text-gray-400">
+                        {new Date(p.paidAt).toLocaleDateString()}
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {p.status === PaymentStatus.PENDING && (
+                      <button
+                        type="button"
+                        onClick={() => completeMutation.mutate(p.id)}
+                        disabled={completeMutation.isPending}
+                        className="inline-flex items-center rounded-md border border-gray-300 bg-white px-2.5 py-1 text-xs font-semibold text-gray-700 shadow-sm hover:bg-gray-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-300 disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        {completing ? 'Saving…' : 'Mark as completed'}
+                      </button>
+                    )}
+                    <span
+                      className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${PAYMENT_STATUS_STYLES[p.status]}`}
+                    >
+                      {PAYMENT_STATUS_LABELS[p.status]}
+                    </span>
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        </>
       )}
     </section>
   );

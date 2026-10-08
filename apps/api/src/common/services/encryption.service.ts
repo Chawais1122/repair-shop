@@ -11,7 +11,13 @@ export class EncryptionService {
 
   constructor(configService: ConfigService) {
     const keyHex = configService.get<string>('DEVICE_ENCRYPTION_KEY', '');
-    this.key = Buffer.from(keyHex.padEnd(64, '0').slice(0, 64), 'hex');
+    if (!/^[0-9a-fA-F]{64}$/.test(keyHex)) {
+      throw new Error(
+        'DEVICE_ENCRYPTION_KEY must be 64 hex characters (32 bytes). ' +
+          "Generate one with: node -e \"console.log(require('crypto').randomBytes(32).toString('hex'))\"",
+      );
+    }
+    this.key = Buffer.from(keyHex, 'hex');
   }
 
   encrypt(plaintext: string): string {

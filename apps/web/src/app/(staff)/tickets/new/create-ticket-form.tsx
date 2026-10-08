@@ -78,7 +78,11 @@ export function CreateTicketForm() {
       const res = await clientFetch<{ data: { id: string } }>('/tickets', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
+        // Empty date input yields '' which the API's IsDateString rejects
+        body: JSON.stringify({
+          ...data,
+          expectedCompletionAt: data.expectedCompletionAt || undefined,
+        }),
       });
       router.push(`/tickets/${res.data.id}`);
     } catch (err) {
@@ -270,6 +274,12 @@ export function CreateTicketForm() {
               </span>
             </div>
           </div>
+
+          {(errors.customerId || errors.deviceId) && (
+            <div role="alert" className="mb-4 rounded-md border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+              {errors.customerId?.message ?? errors.deviceId?.message}
+            </div>
+          )}
 
           {serverError && (
             <div role="alert" className="mb-4 rounded-md border border-red-200 bg-red-50 p-4 text-sm text-red-700">
