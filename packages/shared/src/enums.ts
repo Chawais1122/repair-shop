@@ -42,3 +42,19 @@ export enum PaymentStatus {
   COMPLETED = 'COMPLETED',
   REFUNDED = 'REFUNDED',
 }
+
+export enum PurchaseOrderStatus {
+  DRAFT = 'DRAFT',
+  ORDERED = 'ORDERED',
+  RECEIVED = 'RECEIVED',
+  CANCELLED = 'CANCELLED',
+}
+
+export enum StockMovementReason {
+  PURCHASE_RECEIVED = 'PURCHASE_RECEIVED',
+  TICKET_USAGE = 'TICKET_USAGE',
+  TICKET_RETURN = 'TICKET_RETURN',
+  SALE = 'SALE',
+  SALE_VOID = 'SALE_VOID',
+  ADJUSTMENT = 'ADJUSTMENT',
+}

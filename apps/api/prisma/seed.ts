@@ -7,6 +7,12 @@ async function main(): Promise<void> {
   console.log('Seeding database...');
 
   // Clear in FK-safe order
+  await prisma.stockMovement.deleteMany();
+  await prisma.ticketItem.deleteMany();
+  await prisma.purchaseOrderItem.deleteMany();
+  await prisma.purchaseOrder.deleteMany();
+  await prisma.part.deleteMany();
+  await prisma.supplier.deleteMany();
   await prisma.payment.deleteMany();
   await prisma.repairNote.deleteMany();
   await prisma.ticketStatusHistory.deleteMany();
@@ -105,7 +111,8 @@ async function main(): Promise<void> {
       {
         ticketId: ticket1.id,
         authorId: technician.id,
-        content: 'LCD digitizer assembly cracked. Touch IC appears intact. Ordering replacement screen.',
+        content:
+          'LCD digitizer assembly cracked. Touch IC appears intact. Ordering replacement screen.',
         isInternal: true,
       },
       {
@@ -123,8 +130,145 @@ async function main(): Promise<void> {
     ],
   });
 
-  // Suppress unused variable warnings
-  void admin;
+  // ── Inventory ──────────────────────────────────────────────────────────────
+  const partsSupplier = await prisma.supplier.create({
+    data: {
+      name: 'Phone Parts Wholesale',
+      contactName: 'Sam Lee',
+      email: 'orders@phoneparts.example',
+      website: 'https://phoneparts.example',
+    },
+  });
+
+  const partSeeds = [
+    {
+      sku: 'SCR-IP14',
+      name: 'iPhone 14 OLED Screen',
+      category: 'Screens',
+      cost: '65.00',
+      sell: '189.00',
+      qty: 4,
+    },
+    {
+      sku: 'SCR-IP13',
+      name: 'iPhone 13 OLED Screen',
+      category: 'Screens',
+      cost: '55.00',
+      sell: '169.00',
+      qty: 2,
+    },
+    {
+      sku: 'BAT-IP14',
+      name: 'iPhone 14 Battery',
+      category: 'Batteries',
+      cost: '14.00',
+      sell: '79.00',
+      qty: 10,
+    },
+    {
+      sku: 'BAT-XPS15',
+      name: 'Dell XPS 15 Battery',
+      category: 'Batteries',
+      cost: '38.00',
+      sell: '129.00',
+      qty: 1,
+    },
+    {
+      sku: 'ACC-USBC-1M',
+      name: 'USB-C Cable 1m',
+      category: 'Accessories',
+      cost: '2.00',
+      sell: '14.99',
+      qty: 25,
+    },
+    {
+      sku: 'ACC-TG-IP14',
+      name: 'Tempered Glass iPhone 14',
+      category: 'Accessories',
+      cost: '1.20',
+      sell: '19.99',
+      qty: 0,
+    },
+  ];
+
+  const parts: Record<string, string> = {};
+  for (const p of partSeeds) {
+    const part = await prisma.part.create({
+      data: {
+        sku: p.sku,
+        name: p.name,
+        category: p.category,
+        costPrice: p.cost,
+        sellPrice: p.sell,
+        quantity: p.qty,
+        lowStockThreshold: 3,
+        supplierId: partsSupplier.id,
+      },
+    });
+    parts[p.sku] = part.id;
+    if (p.qty > 0) {
+      await prisma.stockMovement.create({
+        data: {
+          partId: part.id,
+          change: p.qty,
+          reason: 'ADJUSTMENT',
+          note: 'Opening stock',
+          createdById: admin.id,
+        },
+      });
+    }
+  }
+
+  // Screen used on the iPhone ticket, plus labor
+  const screenLine = await prisma.ticketItem.create({
+    data: {
+      ticketId: ticket1.id,
+      partId: parts['SCR-IP14'],
+      description: 'iPhone 14 OLED Screen',
+      quantity: 1,
+      unitPrice: '189.00',
+      unitCost: '65.00',
+      createdById: technician.id,
+    },
+  });
+  await prisma.part.update({
+    where: { id: parts['SCR-IP14'] },
+    data: { quantity: { decrement: 1 } },
+  });
+  await prisma.stockMovement.create({
+    data: {
+      partId: parts['SCR-IP14']!,
+      change: -1,
+      reason: 'TICKET_USAGE',
+      referenceId: screenLine.id,
+      createdById: technician.id,
+    },
+  });
+  await prisma.ticketItem.create({
+    data: {
+      ticketId: ticket1.id,
+      description: 'Screen replacement labor',
+      quantity: 1,
+      unitPrice: '40.00',
+      createdById: technician.id,
+    },
+  });
+
+  await prisma.purchaseOrder.create({
+    data: {
+      poNumber: 'PO-0001',
+      supplierId: partsSupplier.id,
+      status: 'ORDERED',
+      orderedAt: new Date(),
+      createdById: admin.id,
+      items: {
+        create: [
+          { partId: parts['ACC-TG-IP14']!, quantity: 20, unitCost: '1.20' },
+          { partId: parts['BAT-XPS15']!, quantity: 3, unitCost: '36.50' },
+        ],
+      },
+    },
+  });
 
   console.log('\nSeeding complete.');
   console.log('Test accounts (password: Password123!):');

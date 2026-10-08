@@ -1,7 +1,9 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { Pencil } from 'lucide-react';
+import { TicketStatus } from '@repair-shop/shared';
 import { getTicket, getTechnicians } from '@/lib/api/tickets';
+import { getTicketItems } from '@/lib/api/inventory';
 import { getPaymentSummary } from '@/lib/api/payments';
 import { ApiError } from '@/lib/api/client';
 import { TicketStatusBadge } from '@/components/shared/ticket-status-badge';
@@ -13,6 +15,7 @@ import { cn } from '@/lib/utils';
 import { StatusTimeline } from './status-timeline';
 import { UpdateStatusForm } from './update-status-form';
 import { AssignTechnicianForm } from './assign-technician-form';
+import { TicketItemsCard } from './ticket-items-card';
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -36,10 +39,12 @@ export default async function TicketDetailPage({ params }: PageProps) {
     throw err;
   }
 
-  const [technicians, paymentSummary] = await Promise.all([
+  const [technicians, paymentSummary, items] = await Promise.all([
     getTechnicians(),
     getPaymentSummary(id),
+    getTicketItems(id),
   ]);
+  const itemsLocked = [TicketStatus.DELIVERED, TicketStatus.CANCELLED].includes(ticket.status);
 
   return (
     <div className="space-y-6">
@@ -123,6 +128,13 @@ export default async function TicketDetailPage({ params }: PageProps) {
               </dl>
             </CardContent>
           </Card>
+
+          <TicketItemsCard
+            ticketId={ticket.id}
+            summary={items}
+            locked={itemsLocked}
+            finalCost={ticket.finalCost}
+          />
 
           <Card>
             <CardHeader>
